@@ -1,5 +1,6 @@
 package com.cgvsu;
 
+import com.cgvsu.objwriter.ObjWriter;
 import com.cgvsu.render_engine.RenderEngine;
 import javafx.fxml.FXML;
 import javafx.animation.Animation;
@@ -8,6 +9,8 @@ import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
@@ -31,7 +34,11 @@ public class GuiController {
     @FXML
     private Canvas canvas;
 
-    private Model mesh = null;
+    @FXML
+    private VBox modelsListContainer;
+
+    private java.util.List<Model> models = new java.util.ArrayList<>();
+    private int modelCounter = 1;;
 
     private Camera camera = new Camera(
             new Vector3f(0, 00, 100),
@@ -55,8 +62,8 @@ public class GuiController {
             canvas.getGraphicsContext2D().clearRect(0, 0, width, height);
             camera.setAspectRatio((float) (width / height));
 
-            if (mesh != null) {
-                RenderEngine.render(canvas.getGraphicsContext2D(), camera, mesh, (int) width, (int) height);
+            for (Model model : models) {
+                RenderEngine.render(canvas.getGraphicsContext2D(), camera, model, (int) width, (int) height);
             }
         });
 
@@ -68,7 +75,7 @@ public class GuiController {
     private void onOpenModelMenuItemClick() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Model (*.obj)", "*.obj"));
-        fileChooser.setTitle("Load Model");
+        fileChooser.setTitle("Загрузить модель");
 
         File file = fileChooser.showOpenDialog((Stage) canvas.getScene().getWindow());
         if (file == null) {
@@ -78,11 +85,62 @@ public class GuiController {
         Path fileName = Path.of(file.getAbsolutePath());
 
         try {
-            String fileContent = Files.readString(fileName);
-            mesh = ObjReader.read(fileContent);
+            String fileContent = Files.readString(file.toPath());
+            Model model = ObjReader.read(fileContent);
+
+            model.setName("Модель " + modelCounter++);
+            models.add(model);
+
+            updateModelsListUI();
             // todo: обработка ошибок
         } catch (IOException exception) {
 
+        }
+    }
+    @FXML
+    private void onSaveModelMenuItemClick() {
+        if (models.isEmpty()) {
+            System.out.println("Нет модели для сохранения!");
+            return;
+        }
+
+        Model modelToSave = models.get(0);
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Model (*.obj)", "*.obj"));
+        fileChooser.setTitle("Сохранить модель");
+        fileChooser.setInitialFileName("model.obj");
+
+        File file = fileChooser.showSaveDialog((Stage) canvas.getScene().getWindow());
+        if (file == null) {
+            return;
+        }
+
+        try {
+            String objContent = ObjWriter.modelToString(modelToSave);
+            Files.writeString(file.toPath(), objContent);
+        } catch (IOException exception) {
+
+        }
+    }
+
+    private void updateModelsListUI() {
+        modelsListContainer.getChildren().clear();
+
+        for (Model model : models) {
+            HBox item = new HBox(10);
+            item.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+            javafx.scene.control.Label label = new javafx.scene.control.Label(model.getName());
+
+            javafx.scene.control.Button deleteBtn = new javafx.scene.control.Button("Удалить");
+            deleteBtn.setOnAction(e -> {
+                models.remove(model);
+                updateModelsListUI();
+            });
+
+            item.getChildren().addAll(label, deleteBtn);
+            modelsListContainer.getChildren().add(item);
         }
     }
 

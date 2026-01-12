@@ -1,54 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.Accordion?>
 <?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.input.KeyCodeCombination?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.layout.VBox?>
 
-<AnchorPane fx:id="anchorPane" xmlns:fx="http://javafx.com/fxml" fx:controller="com.cgvsu.GuiController">
+<AnchorPane fx:id="anchorPane" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.cgvsu.GuiController">
+
+                                  <Canvas fx:id="canvas" depthTest="DISABLE" height="870" width="1600" />
     <MenuBar>
-        <Menu mnemonicParsing="false" text="File">
-            <MenuItem mnemonicParsing="false" onAction="#onOpenModelMenuItemClick" text="Load Model">
+        <Menu mnemonicParsing="false" text="Файл">
+            <MenuItem mnemonicParsing="false" onAction="#onOpenModelMenuItemClick" text="Загрузить модель">
             <accelerator>
-                <KeyCodeCombination alt="UP" control="DOWN" meta="UP" shift="UP" shortcut="UP" code="F"/>
+                <KeyCodeCombination alt="UP" code="F" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+            </accelerator>
+            </MenuItem>
+            <MenuItem mnemonicParsing="false" onAction="#onSaveModelMenuItemClick" text="Сохранить модель">
+            <accelerator>
+                <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
             </accelerator>
             </MenuItem>
         </Menu>
-        <Menu mnemonicParsing="false" text="Camera Options">
-            <MenuItem mnemonicParsing="false" onAction="#handleCameraForward" text="Forward">
-                <accelerator>
-                    <KeyCodeCombination alt="UP" control="UP" meta="UP" shift="UP" shortcut="UP" code="UP"/>
-                </accelerator>
-            </MenuItem>
-            <MenuItem mnemonicParsing="false" onAction="#handleCameraBackward" text="Backward">
-                <accelerator>
-                    <KeyCodeCombination alt="UP" control="UP" meta="UP" shift="UP" shortcut="UP" code="DOWN"/>
-                </accelerator>
-            </MenuItem>
-            <MenuItem mnemonicParsing="false" onAction="#handleCameraLeft" text="Left">
-                <accelerator>
-                    <KeyCodeCombination alt="UP" control="UP" meta="UP" shift="UP" shortcut="UP" code="LEFT"/>
-                </accelerator>
-            </MenuItem>
-            <MenuItem mnemonicParsing="false" onAction="#handleCameraRight" text="Right">
-                <accelerator>
-                    <KeyCodeCombination alt="UP" control="UP" meta="UP" shift="UP" shortcut="UP" code="RIGHT"/>
-                </accelerator>
-            </MenuItem>
-            <MenuItem mnemonicParsing="false" onAction="#handleCameraUp" text="Up">
-                <accelerator>
-                    <KeyCodeCombination alt="UP" control="UP" meta="UP" shift="UP" shortcut="UP" code="W"/>
-                </accelerator>
-            </MenuItem>
-            <MenuItem mnemonicParsing="false" onAction="#handleCameraDown" text="Down">
-                <accelerator>
-                    <KeyCodeCombination alt="UP" control="UP" meta="UP" shift="UP" shortcut="UP" code="S"/>
-                </accelerator>
-            </MenuItem>
-        </Menu>
     </MenuBar>
-
-    <Canvas fx:id="canvas" width="1600" height="870" AnchorPane.topAnchor="30.0"/>
+   <Accordion layoutX="14.0" layoutY="45.0">
+     <panes>
+         <TitledPane animated="false" text="Модели">
+             <content>
+                 <VBox fx:id="modelsListContainer" prefHeight="200.0" prefWidth="100.0" />
+             </content>
+         </TitledPane>
+       <TitledPane animated="false" text="Камеры">
+         <content>
+           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+         </content>
+       </TitledPane>
+       <TitledPane animated="false" text="Модели освещения">
+         <content>
+           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+         </content>
+       </TitledPane>
+     </panes>
+   </Accordion>
 </AnchorPane>
