@@ -126,13 +126,83 @@ public class GuiController {
 
         try {
             StringBuilder sb = new StringBuilder();
+
+            int v = 0;
+            int vt = 0;
+            int vn = 0;
             for(Model model : activeModels){
-                sb.append(ObjWriter.modelToString(model)).append("\n");
+
+                String modelObj = ObjWriter.modelToString(model, null);
+                String fixModel = shiftIndices(modelObj, v, vt, vn);
+
+                sb.append(fixModel).append("\n");
+
+                v += model.getVertices().size();
+                if (model.getTextureVertices() != null){
+                    vt += model.getTextureVertices().size();
+                }else{
+                    vt += 0;
+                }
+                if (model.getNormals() != null){
+                    vn += model.getNormals().size();
+                }else{
+                    vn += 0;
+                }
                 Files.writeString(file.toPath(), sb.toString());
             }
         } catch (IOException exception) {
 
         }
+    }
+
+    private String shiftIndices(String objContent, int vOffset, int vtOffset, int vnOffset) {
+        if (vOffset == 0 && vtOffset == 0 && vnOffset == 0) {
+            return objContent;
+        }
+
+        StringBuilder result = new StringBuilder();
+        String[] lines = objContent.split("\n");
+
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (trimmed.startsWith("f ")) {
+                String[] tokens = trimmed.substring(2).split("\\s+");
+                StringBuilder newFace = new StringBuilder("f");
+
+                for (String token : tokens) {
+                    if (token.isEmpty()) continue;
+
+                    String[] indices = token.split("/");
+                    try {
+                        int vIdx = Integer.parseInt(indices[0]) + vOffset;
+                        newFace.append(" ").append(vIdx);
+
+                        if (indices.length > 1 && !indices[1].isEmpty()) {
+                            int vtIdx = Integer.parseInt(indices[1]) + vtOffset;
+                            newFace.append("/").append(vtIdx);
+                        } else if (indices.length > 2) {
+                            newFace.append("/");
+                        }
+
+                        if (indices.length > 2 && !indices[2].isEmpty()) {
+                            int vnIdx = Integer.parseInt(indices[2]) + vnOffset;
+                            if (indices.length <= 1 || indices[1].isEmpty()) {
+                                newFace.append("/").append(vnIdx);
+                            } else {
+                                newFace.append("/").append(vnIdx);
+                            }
+                        }
+                    } catch (NumberFormatException e) {
+                        newFace.append(" ").append(token);
+                    }
+                }
+                result.append(newFace).append("\n");
+            } else {
+                result.append(line).append("\n");
+            }
+        }
+
+        return result.toString();
     }
 
     private void updateModelsListUI() {
