@@ -47,5 +47,5 @@
        </TitledPane>
      </panes>
    </Accordion>
-   <Button layoutX="61.0" mnemonicParsing="false" text="Режим редактирования" />
+   <Button layoutX="61.0" fx:id="editVerticesButton" mnemonicParsing="false" onAction="#toggleEditVerticesMode" text="Режим редактирования" />
 </AnchorPane>

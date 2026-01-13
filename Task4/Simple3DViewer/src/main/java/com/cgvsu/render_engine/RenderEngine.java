@@ -6,6 +6,8 @@ import com.cgvsu.math.Vector3f;
 import javafx.scene.canvas.GraphicsContext;
 import javax.vecmath.*;
 import com.cgvsu.model.Model;
+import javafx.scene.paint.Color;
+
 import static com.cgvsu.render_engine.GraphicConveyor.*;
 
 public class RenderEngine {
@@ -15,7 +17,8 @@ public class RenderEngine {
             final Camera camera,
             final Model mesh,
             final int width,
-            final int height)
+            final int height,
+            final boolean showVertices)
     {
         Matrix4f modelMatrix = rotateScaleTranslate();
         Matrix4f viewMatrix = camera.getViewMatrix();
@@ -54,5 +57,30 @@ public class RenderEngine {
                         resultPoints.get(0).x,
                         resultPoints.get(0).y);
         }
+        if (showVertices && mesh.vertices !=null){
+            Matrix4f modelMatrixNew = rotateScaleTranslate();
+            Matrix4f viewMatrixNew = camera.getViewMatrix();
+            Matrix4f projectionMatrixNew = camera.getProjectionMatrix();
+
+            Matrix4f mvl = new Matrix4f(modelMatrixNew);
+            mvl.mul(viewMatrixNew);
+            mvl.mul(projectionMatrixNew);
+
+            graphicsContext.setFill(Color.RED);
+            for(Vector3f vertex : mesh.vertices){
+                javax.vecmath.Vector3f v = new javax.vecmath.Vector3f(vertex.x, vertex.y, vertex.z);
+                Point2f screenPoint = vertexToPoint(multiplyMatrix4ByVector3(mvl, v), width, height);
+                if (Float.isFinite(screenPoint.x) && Float.isFinite(screenPoint.y)) {
+                    double size = 3.0;
+                    graphicsContext.fillOval(
+                            screenPoint.x - size / 2,
+                            screenPoint.y - size / 2,
+                            size,
+                            size
+                    );
+                }
+            }
+        }
+
     }
 }

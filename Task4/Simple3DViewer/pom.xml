@@ -50,7 +50,7 @@
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-graphics</artifactId>
-            <version>23</version>
+            <version>17.0.0.1</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
@@ -66,10 +66,6 @@
                     <target>17</target>
                 </configuration>
             </plugin>
-            <!--
-            for building jar using maven:
-            mvn clean -Dmaven.clean.failOnError=false compile assembly:single -DskipTests=true
-            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

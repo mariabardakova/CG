@@ -44,6 +44,11 @@ public class GuiController {
     @FXML
     private VBox modelsListContainer;
 
+    @FXML
+    private Button editVerticesButton;
+
+    private boolean editVerticesMode = false;
+
     Set<Model> activeModels = new HashSet<>();
 
     private List<Model> models = new ArrayList<>();
@@ -55,6 +60,14 @@ public class GuiController {
             1.0F, 1, 0.01F, 100);
 
     private Timeline timeline;
+
+    @FXML
+    private void toggleEditVerticesMode() {
+        editVerticesMode = !editVerticesMode;
+        editVerticesButton.setStyle(editVerticesMode ?
+                "-fx-background-color: #ff6b6b; -fx-text-fill: white;" :
+                "-fx-background-color: #f0f0f0;");
+    }
 
     @FXML
     private void initialize() {
@@ -72,7 +85,7 @@ public class GuiController {
             camera.setAspectRatio((float) (width / height));
 
             for (Model model : activeModels) {
-                RenderEngine.render(canvas.getGraphicsContext2D(), camera, model, (int) width, (int) height);
+                RenderEngine.render(canvas.getGraphicsContext2D(), camera, model, (int) width, (int) height, editVerticesMode);
             }
         });
 
