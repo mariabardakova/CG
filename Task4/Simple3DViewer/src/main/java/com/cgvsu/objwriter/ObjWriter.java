@@ -54,6 +54,10 @@ public class ObjWriter {
 
         appendComment(sb, comment);
 
+        if (model.getName() != null && !model.getName().trim().isEmpty()) {
+            sb.append("o ").append(model.getName().trim()).append('\n');
+        }
+
         appendVertices(sb, model.getVertices());
 
         appendTextureVertices(sb, model.getTextureVertices());

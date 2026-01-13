@@ -8,6 +8,8 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -18,6 +20,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.IOException;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import javax.vecmath.Vector3f;
 
 import com.cgvsu.model.Model;
@@ -37,7 +43,9 @@ public class GuiController {
     @FXML
     private VBox modelsListContainer;
 
-    private java.util.List<Model> models = new java.util.ArrayList<>();
+    Set<Model> activeModels = new HashSet<>();
+
+    private List<Model> models = new ArrayList<>();
     private int modelCounter = 1;;
 
     private Camera camera = new Camera(
@@ -62,7 +70,7 @@ public class GuiController {
             canvas.getGraphicsContext2D().clearRect(0, 0, width, height);
             camera.setAspectRatio((float) (width / height));
 
-            for (Model model : models) {
+            for (Model model : activeModels) {
                 RenderEngine.render(canvas.getGraphicsContext2D(), camera, model, (int) width, (int) height);
             }
         });
@@ -73,6 +81,7 @@ public class GuiController {
 
     @FXML
     private void onOpenModelMenuItemClick() {
+
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Model (*.obj)", "*.obj"));
         fileChooser.setTitle("Загрузить модель");
@@ -90,6 +99,7 @@ public class GuiController {
 
             model.setName("Модель " + modelCounter++);
             models.add(model);
+            activeModels.add(model);
 
             updateModelsListUI();
             // todo: обработка ошибок
@@ -104,8 +114,6 @@ public class GuiController {
             return;
         }
 
-        Model modelToSave = models.get(0);
-
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Model (*.obj)", "*.obj"));
         fileChooser.setTitle("Сохранить модель");
@@ -117,8 +125,11 @@ public class GuiController {
         }
 
         try {
-            String objContent = ObjWriter.modelToString(modelToSave);
-            Files.writeString(file.toPath(), objContent);
+            StringBuilder sb = new StringBuilder();
+            for(Model model : activeModels){
+                sb.append(ObjWriter.modelToString(model)).append("\n");
+                Files.writeString(file.toPath(), sb.toString());
+            }
         } catch (IOException exception) {
 
         }
@@ -131,16 +142,36 @@ public class GuiController {
             HBox item = new HBox(10);
             item.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
-            javafx.scene.control.Label label = new javafx.scene.control.Label(model.getName());
+            Button modelBtn = new Button(model.getName());
 
-            javafx.scene.control.Button deleteBtn = new javafx.scene.control.Button("Удалить");
+            modelBtn.setOnAction(e -> {
+                if (activeModels.contains(model)) {
+                    activeModels.remove(model);
+                } else {
+                    activeModels.add(model);
+                }
+                updateModelButtonStyle(modelBtn, activeModels.contains(model));
+            });
+
+            updateModelButtonStyle(modelBtn, activeModels.contains(model));
+
+            Button deleteBtn = new Button("Удалить");
             deleteBtn.setOnAction(e -> {
                 models.remove(model);
+                activeModels.remove(model);
                 updateModelsListUI();
             });
 
-            item.getChildren().addAll(label, deleteBtn);
+            item.getChildren().addAll(modelBtn, deleteBtn);
             modelsListContainer.getChildren().add(item);
+        }
+    }
+
+    private void updateModelButtonStyle(Button button, boolean isA) {
+        if (isA) {
+            button.setStyle("-fx-font-weight: bold; -fx-background-color: #cce5ff; -fx-border-color: #007bff; -fx-border-width: 1;");
+        } else {
+            button.setStyle("-fx-font-weight: normal; -fx-background-color: white; -fx-border-color: #ccc; -fx-border-width: 1;");
         }
     }
 
