@@ -18,7 +18,8 @@ public class RenderEngine {
             final Model mesh,
             final int width,
             final int height,
-            final boolean showVertices)
+            final boolean showVertices,
+            final Integer highlightedPolygonIndex)
     {
         Matrix4f modelMatrix = rotateScaleTranslate();
         Matrix4f viewMatrix = camera.getViewMatrix();
@@ -35,6 +36,14 @@ public class RenderEngine {
             ArrayList<Point2f> resultPoints = new ArrayList<>();
             for (int vertexInPolygonInd = 0; vertexInPolygonInd < nVerticesInPolygon; ++vertexInPolygonInd) {
                 Vector3f vertex = mesh.vertices.get(mesh.polygons.get(polygonInd).getVertexIndices().get(vertexInPolygonInd));
+
+                if (highlightedPolygonIndex != null && polygonInd == highlightedPolygonIndex) {
+                    graphicsContext.setStroke(javafx.scene.paint.Color.RED);
+                    graphicsContext.setLineWidth(2.0); // можно сделать толще
+                } else {
+                    graphicsContext.setStroke(javafx.scene.paint.Color.BLACK);
+                    graphicsContext.setLineWidth(1.0);
+                }
 
                 javax.vecmath.Vector3f vertexVecmath = new javax.vecmath.Vector3f(vertex.x, vertex.y, vertex.z);
 

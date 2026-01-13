@@ -25,11 +25,15 @@ import java.nio.file.Path;
 import java.io.IOException;
 import java.io.File;
 import java.util.*;
+import javax.vecmath.Matrix4f;
+import javax.vecmath.Point2f;
 import javax.vecmath.Vector3f;
 
 import com.cgvsu.model.Model;
 import com.cgvsu.objreader.ObjReader;
 import com.cgvsu.render_engine.Camera;
+
+import static com.cgvsu.render_engine.GraphicConveyor.*;
 
 public class GuiController {
 
@@ -43,6 +47,9 @@ public class GuiController {
 
     @FXML
     private VBox modelsListContainer;
+
+    private Model hoveredModel = null;
+    private Integer hoveredPolygonIndex = null;
 
     @FXML
     private Button editVerticesButton;
@@ -85,7 +92,33 @@ public class GuiController {
             camera.setAspectRatio((float) (width / height));
 
             for (Model model : activeModels) {
-                RenderEngine.render(canvas.getGraphicsContext2D(), camera, model, (int) width, (int) height, editVerticesMode);
+                RenderEngine.render(canvas.getGraphicsContext2D(), camera, model, (int) width, (int) height, editVerticesMode, (model == hoveredModel) ? hoveredPolygonIndex : null);
+            }
+        });
+
+        canvas.setOnMouseMoved(event -> {
+            if (!editVerticesMode){
+                hoveredModel = null;
+                hoveredPolygonIndex = null;
+                return;
+            }
+
+            double mouseX = event.getX();
+            double mouseY = event.getY();
+
+            boolean found = false;
+            for(Model model: activeModels){
+                Integer polygonIndex = findPolygonUnderCursor(model, mouseX, mouseY, (int) canvas.getWidth(), (int) canvas.getHeight());
+                if(polygonIndex != null){
+                    hoveredModel = model;
+                    hoveredPolygonIndex = polygonIndex;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found){
+                hoveredModel = null;
+                hoveredPolygonIndex = null;
             }
         });
 
@@ -257,6 +290,58 @@ public class GuiController {
         } else {
             button.setStyle("-fx-font-weight: normal; -fx-background-color: white; -fx-border-color: #ccc; -fx-border-width: 1;");
         }
+    }
+
+    private Integer findPolygonUnderCursor(Model model, double mouseX, double mouseY, int width, int height){
+        Camera cam = camera;
+        Matrix4f modelMatrix = rotateScaleTranslate();
+        Matrix4f viewMatrix = cam.getViewMatrix();
+        Matrix4f projectionMatrix = cam.getProjectionMatrix();
+
+        Matrix4f mvp = new Matrix4f(modelMatrix);
+        mvp.mul(viewMatrix);
+        mvp.mul(projectionMatrix);
+
+        for(int i = 0; i < model.polygons.size(); i ++){
+            Polygon polygon = model.polygons.get(i);
+            List<Integer> vertexIndices = polygon.getVertexIndices();
+            if (vertexIndices == null || vertexIndices.isEmpty()) continue;
+
+            List<Point2f> screenPoints = new ArrayList<>();
+            for (Integer idx : vertexIndices){
+                com.cgvsu.math.Vector3f v3d = model.vertices.get(idx);
+                javax.vecmath.Vector3f v = new javax.vecmath.Vector3f(v3d.x, v3d.y, v3d.z);
+                Point2f p = vertexToPoint(multiplyMatrix4ByVector3(mvp, v), width, height);
+                if (!Float.isFinite(p.x) || !Float.isFinite(p.y)) {
+                    screenPoints = null;
+                    break;
+                }
+                screenPoints.add(p);
+            }
+            if(screenPoints == null || screenPoints.size() < 3) continue;
+
+            if (isPointInPolygon((float) mouseX, (float) mouseY, screenPoints)){
+                return i;
+            }
+        }
+        return null;
+    }
+
+    private boolean isPointInPolygon(float x, float y, List<Point2f> polygon) {
+        int n = polygon.size();
+        boolean inside = false;
+
+        for (int i = 0, j = n - 1; i < n; j = i++) {
+            float xi = polygon.get(i).x;
+            float yi = polygon.get(i).y;
+            float xj = polygon.get(j).x;
+            float yj = polygon.get(j).y;
+
+            boolean intersect = ((yi > y) != (yj > y)) &&
+                    (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
     }
 
     @FXML
