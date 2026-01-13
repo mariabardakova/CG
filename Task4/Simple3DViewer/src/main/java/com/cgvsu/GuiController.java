@@ -1,12 +1,16 @@
 package com.cgvsu;
 
+import com.cgvsu.model.Polygon;
 import com.cgvsu.objwriter.ObjWriter;
+import com.cgvsu.removers.PolygonRemover;
+import com.cgvsu.removers.vertexremover.VertexRemoverImpl;
 import com.cgvsu.render_engine.RenderEngine;
 import javafx.fxml.FXML;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
+import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -20,10 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.IOException;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import javax.vecmath.Vector3f;
 
 import com.cgvsu.model.Model;
@@ -148,8 +149,8 @@ public class GuiController {
                 }else{
                     vn += 0;
                 }
-                Files.writeString(file.toPath(), sb.toString());
             }
+            Files.writeString(file.toPath(), sb.toString());
         } catch (IOException exception) {
 
         }

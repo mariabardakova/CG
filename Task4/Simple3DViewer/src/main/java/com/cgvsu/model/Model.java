@@ -29,6 +29,18 @@ public class Model {
         return normals;
     }
 
+    public void setVertices(ArrayList<Vector3f> vertices) {
+        this.vertices = vertices;
+    }
+
+    public void setTextureVertices(ArrayList<Vector2f> textureVertices) {
+        this.textureVertices = textureVertices;
+    }
+
+    public void setNormals(ArrayList<Vector3f> normals) {
+        this.normals = normals;
+    }
+
     public void setName(String name) { this.name = name; }
     public String getName() { return name; }
 }
