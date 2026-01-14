@@ -15,7 +15,7 @@
 
     <Canvas fx:id="canvas" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="250" AnchorPane.rightAnchor="0" />
 
-    <VBox spacing="10" prefWidth="300" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" style="-fx-padding: 10; -fx-background-color: white;">
+    <VBox spacing="10" prefWidth="350" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" style="-fx-padding: 10; -fx-background-color: white;">
 
         <HBox spacing="10" style="-fx-padding: 0 0 10 0;">
             <MenuButton text="Файл" style="-fx-font-size: 14px; -fx-font-weight: bold;">
@@ -43,7 +43,9 @@
         </TitledPane>
 
         <TitledPane animated="true" collapsible="true" text="Камера" expanded="true">
-            <Label text="— Управление камерой —" style="-fx-font-weight: bold; -fx-padding: 5;" />
+            <VBox fx:id="camerasContainer" spacing="10" style="-fx-padding: 5;">
+                <Button text="Добавить камеру" onAction="#addCamera" />
+            </VBox>
         </TitledPane>
 
         <TitledPane animated="true" collapsible="true" text="Освещение" expanded="true">

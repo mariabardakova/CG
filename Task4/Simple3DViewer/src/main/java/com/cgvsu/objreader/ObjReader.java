@@ -51,40 +51,29 @@ public class ObjReader {
 
 			wordsInLine.remove(0);
 
-			try {//исправлено
 
-
-				switch (token) {
-					// Для структур типа вершин методы написаны так, чтобы ничего не знать о внешней среде.
-					// Они принимают только то, что им нужно для работы, а возвращают только то, что могут создать.
-					// Исключение - индекс строки. Он прокидывается, чтобы выводить сообщение об ошибке.
-					// Могло быть иначе. Например, метод parseVertex мог вместо возвращения вершины принимать вектор вершин
-					// модели или сам класс модели, работать с ним.
-					// Но такой подход может привести к большему количеству ошибок в коде. Например, в нем что-то может
-					// тайно сделаться с классом модели.
-					// А еще это портит читаемость
-					// И не стоит забывать про тесты. Чем проще вам задать данные для теста, проверить, что метод рабочий,
-					// тем лучше.
-					case OBJ_VERTEX_TOKEN -> result.vertices.add(parseVertex(wordsInLine, lineInd));
-					case OBJ_TEXTURE_TOKEN -> result.textureVertices.add(parseTextureVertex(wordsInLine, lineInd));
-					case OBJ_NORMAL_TOKEN -> result.normals.add(parseNormal(wordsInLine, lineInd));
-					case OBJ_FACE_TOKEN -> {
-						Polygon p = parseFace(wordsInLine, lineInd, result.vertices.size(), result.textureVertices.size(), result.normals.size());
-						result.polygons.add(p);
-						polygonLine.add(lineInd);
-					}
-					default -> {
-					}
+			switch (token) {
+				// Для структур типа вершин методы написаны так, чтобы ничего не знать о внешней среде.
+				// Они принимают только то, что им нужно для работы, а возвращают только то, что могут создать.
+				// Исключение - индекс строки. Он прокидывается, чтобы выводить сообщение об ошибке.
+				// Могло быть иначе. Например, метод parseVertex мог вместо возвращения вершины принимать вектор вершин
+				// модели или сам класс модели, работать с ним.
+				// Но такой подход может привести к большему количеству ошибок в коде. Например, в нем что-то может
+				// тайно сделаться с классом модели.
+				// А еще это портит читаемость
+				// И не стоит забывать про тесты. Чем проще вам задать данные для теста, проверить, что метод рабочий,
+				// тем лучше.
+				case OBJ_VERTEX_TOKEN -> result.vertices.add(parseVertex(wordsInLine, lineInd));
+				case OBJ_TEXTURE_TOKEN -> result.textureVertices.add(parseTextureVertex(wordsInLine, lineInd));
+				case OBJ_NORMAL_TOKEN -> result.normals.add(parseNormal(wordsInLine, lineInd));
+				case OBJ_FACE_TOKEN -> {
+					Polygon p = parseFace(wordsInLine, lineInd, result.vertices.size(), result.textureVertices.size(), result.normals.size());
+					result.polygons.add(p);
+					polygonLine.add(lineInd);
 				}
-			}catch (ObjReaderException e){
-				System.err.println("Error at line " + lineInd + ": " + e.getMessage());
 			}
 		}
-		try {//исправлено
-			validateModel(result, polygonLine);
-		} catch (ObjReaderException e){
-			throw e;
-		}
+		validateModel(result, polygonLine);
 //		for (int i = 0; i < result.polygons.size(); i++) {
 //			validatePolygon(result, result.polygons.get(i), i);
 //		}

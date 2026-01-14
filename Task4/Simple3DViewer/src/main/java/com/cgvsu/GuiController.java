@@ -12,10 +12,9 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuItem;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
@@ -70,6 +69,61 @@ public class GuiController {
             1.0F, 1, 0.01F, 100);
 
     private Timeline timeline;
+
+    @FXML
+    private VBox camerasContainer;
+
+    private int cameraCnt = 1;
+
+    @FXML
+    private void addCamera() {
+        VBox cameraItem = new VBox(5);
+
+        HBox headerRow = new HBox(10);
+        headerRow.setAlignment(Pos.CENTER_LEFT);
+
+        Button cameraBtn = new Button("Камера " + cameraCnt++);
+        Button deleteBtn = new Button("Удалить");
+        deleteBtn.setOnAction(e -> {
+            camerasContainer.getChildren().remove(cameraItem);
+        });
+
+        headerRow.getChildren().addAll(cameraBtn, deleteBtn);
+        VBox positionPanel = createVectorPanel("Позиция");
+        VBox targetPanel = createVectorPanel("Точка направления");
+
+        HBox fieldsRow = new HBox(20);
+        fieldsRow.getChildren().addAll(positionPanel, targetPanel);
+        cameraItem.getChildren().addAll(headerRow, fieldsRow);
+
+        camerasContainer.getChildren().add(cameraItem);
+    }
+
+    private VBox createVectorPanel(String title) {
+        VBox panel = new VBox(5);
+
+        Label titleLabel = new Label(title);
+        titleLabel.setStyle("-fx-font-weight: bold;");
+
+        TextField xField = new TextField("0.0");
+        TextField yField = new TextField("0.0");
+        TextField zField = new TextField("0.0");
+
+        xField.setPrefWidth(80);
+        yField.setPrefWidth(80);
+        zField.setPrefWidth(80);
+
+        HBox xRow = new HBox(5);
+        xRow.getChildren().addAll(new Label("X:"), xField);
+        HBox yRow = new HBox(5);
+        yRow.getChildren().addAll(new Label("Y:"), yField);
+        HBox zRow = new HBox(5);
+        zRow.getChildren().addAll(new Label("Z:"), zField);
+
+        panel.getChildren().addAll(titleLabel, xRow, yRow, zRow);
+
+        return panel;
+    }
 
     @FXML
     private void toggleEditVerticesMode() {
@@ -187,8 +241,10 @@ public class GuiController {
 
             updateModelsListUI();
             // todo: обработка ошибок
-        } catch (IOException exception) {
-
+        } catch (Exception e) {
+            showErrorAlert("Ошибка при загрузке модели",
+                    "Не удалось прочитать файл OBJ.",
+                    e.getMessage());
         }
     }
     @FXML
@@ -234,8 +290,10 @@ public class GuiController {
                 }
             }
             Files.writeString(file.toPath(), sb.toString());
-        } catch (IOException exception) {
-
+        } catch (Exception e) {
+            showErrorAlert("Ошибка при сохранении модели",
+                    "Не удалось записать файл OBJ.",
+                    e.getMessage());
         }
     }
 
@@ -293,7 +351,7 @@ public class GuiController {
         modelsListContainer.getChildren().clear();
 
         for (Model model : models) {
-            HBox item = new HBox(10);
+            HBox item = new HBox(5);
             item.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
             Button modelBtn = new Button(model.getName());
@@ -316,7 +374,17 @@ public class GuiController {
                 updateModelsListUI();
             });
 
-            item.getChildren().addAll(modelBtn, deleteBtn);
+            Button addTextureBtn = new Button("Добавить текстуру");
+            addTextureBtn.setOnAction(e -> {
+                //здесь будет логика добавления
+            });
+
+            Button removeTextureBtn = new Button("Удалить текстуру");
+            removeTextureBtn.setOnAction(e -> {
+
+            });
+
+            item.getChildren().addAll(modelBtn, deleteBtn, addTextureBtn, removeTextureBtn);
             modelsListContainer.getChildren().add(item);
         }
     }
@@ -382,12 +450,22 @@ public class GuiController {
     }
 
     private void removeSelectPolygon(Model model, int polygonIndex){
-        List<Integer> indices = Collections.singletonList(polygonIndex);
-        PolygonRemover.removePolygons(model, indices, true);
 
-        hoveredVertexIndex = null;
-        hoveredModel = null;
-        hoveredPolygonIndex = null;
+        try {
+            List<Integer> indices = Collections.singletonList(polygonIndex);
+            PolygonRemover.removePolygons(model, indices, true);
+
+            hoveredVertexIndex = null;
+            hoveredModel = null;
+            hoveredPolygonIndex = null;
+        } catch (Exception e) {
+            showErrorAlert("Ошибка при удалении вершины",
+                    "Невозможно удалить выбранную вершину.",
+                    e.getMessage());
+            hoveredModel = null;
+            hoveredVertexIndex = null;
+            hoveredPolygonIndex = null;
+        }
     }
 
     private Integer findVertexUnderCursor(Model model, double mouseX, double mouseY, int width, int height) {
@@ -427,7 +505,25 @@ public class GuiController {
             hoveredPolygonIndex = null;
             hoveredVertexIndex = null;
         } catch (Exception e) {
+            showErrorAlert("Ошибка при удалении вершины",
+                    "Невозможно удалить выбранную вершину.",
+                    e.getMessage());
+
+            hoveredModel = null;
+            hoveredVertexIndex = null;
+            hoveredPolygonIndex = null;
         }
+    }
+
+    private void showErrorAlert(String header, String content, String details) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Ошибка");
+        alert.setHeaderText(header);
+        alert.setContentText(content + "\n\nДетали: " + (details != null ? details : "—"));
+
+        alert.getButtonTypes().setAll(ButtonType.OK);
+
+        alert.showAndWait();
     }
 
 
