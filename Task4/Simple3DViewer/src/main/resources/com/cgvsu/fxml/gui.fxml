@@ -1,51 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.canvas.Canvas?>
-<?import javafx.scene.control.Accordion?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Menu?>
-<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.MenuItem?>
-<?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.input.KeyCodeCombination?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
 
 <AnchorPane fx:id="anchorPane" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.cgvsu.GuiController">
 
-                                  <Canvas fx:id="canvas" depthTest="DISABLE" height="870" width="1600" />
-    <MenuBar>
-        <Menu mnemonicParsing="false" text="Файл">
-            <MenuItem mnemonicParsing="false" onAction="#onOpenModelMenuItemClick" text="Загрузить модель">
-            <accelerator>
-                <KeyCodeCombination alt="UP" code="F" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-            </accelerator>
-            </MenuItem>
-            <MenuItem mnemonicParsing="false" onAction="#onSaveModelMenuItemClick" text="Сохранить модель">
-            <accelerator>
-                <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-            </accelerator>
-            </MenuItem>
-        </Menu>
-    </MenuBar>
-   <Accordion layoutX="14.0" layoutY="45.0">
-     <panes>
-         <TitledPane animated="false" text="Модели">
-             <content>
-                 <VBox fx:id="modelsListContainer" prefHeight="200.0" prefWidth="100.0" />
-             </content>
-         </TitledPane>
-       <TitledPane animated="false" text="Камеры">
-         <content>
-           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
-         </content>
-       </TitledPane>
-       <TitledPane animated="false" text="Модели освещения">
-         <content>
-           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
-         </content>
-       </TitledPane>
-     </panes>
-   </Accordion>
-   <Button layoutX="61.0" fx:id="editVerticesButton" mnemonicParsing="false" onAction="#toggleEditVerticesMode" text="Режим редактирования" />
+    <Canvas fx:id="canvas" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="250" AnchorPane.rightAnchor="0" />
+
+    <VBox spacing="10" prefWidth="300" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" style="-fx-padding: 10; -fx-background-color: white;">
+
+        <HBox spacing="10" style="-fx-padding: 0 0 10 0;">
+            <MenuButton text="Файл" style="-fx-font-size: 14px; -fx-font-weight: bold;">
+                <items>
+                    <MenuItem mnemonicParsing="false" onAction="#onOpenModelMenuItemClick" text="Загрузить модель">
+                        <accelerator>
+                            <KeyCodeCombination alt="UP" code="F" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                        </accelerator>
+                    </MenuItem>
+                    <MenuItem mnemonicParsing="false" onAction="#onSaveModelMenuItemClick" text="Сохранить модель">
+                        <accelerator>
+                            <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                        </accelerator>
+                    </MenuItem>
+                </items>
+            </MenuButton>
+
+            <Button fx:id="editVerticesButton" text="Режим редактирования" onAction="#toggleEditVerticesMode" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
+        </HBox>
+
+        <Label text="" style="-fx-border-color: #ccc; -fx-border-width: 0 0 1 0; -fx-padding: 5 0;" />
+
+        <TitledPane animated="true" collapsible="true" text="Модели" expanded="true">
+            <VBox fx:id="modelsListContainer" spacing="5" />
+        </TitledPane>
+
+        <TitledPane animated="true" collapsible="true" text="Камера" expanded="true">
+            <Label text="— Управление камерой —" style="-fx-font-weight: bold; -fx-padding: 5;" />
+        </TitledPane>
+
+        <TitledPane animated="true" collapsible="true" text="Освещение" expanded="true">
+            <Label text="— Пока не реализовано —" style="-fx-padding: 5;" />
+        </TitledPane>
+
+    </VBox>
+
 </AnchorPane>

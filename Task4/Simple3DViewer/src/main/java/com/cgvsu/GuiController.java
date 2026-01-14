@@ -15,6 +15,7 @@ import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
@@ -53,7 +54,6 @@ public class GuiController {
     private Model hoveredModel = null;
     private Integer hoveredPolygonIndex = null;
     private Integer hoveredVertexIndex = null;
-
     @FXML
     private Button editVerticesButton;
 
@@ -74,10 +74,7 @@ public class GuiController {
     @FXML
     private void toggleEditVerticesMode() {
         editVerticesMode = !editVerticesMode;
-        editVerticesButton.setStyle(editVerticesMode ?
-                "-fx-background-color: #ff6b6b; -fx-text-fill: white;" :
-                "-fx-background-color: #f0f0f0;");
-        if (editVerticesMode){
+        if (editVerticesMode) {
             canvas.requestFocus();
         }
     }
