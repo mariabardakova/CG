@@ -50,12 +50,15 @@ public final class VertexRemoverImpl implements VertexRemover {
         Set<Integer> textureIndicesToRemove = new HashSet<>();
         Set<Integer> normalIndicesToRemove = new HashSet<>();
 
+        Set<Integer> originalVertices = new HashSet<>(vertexIndices);
+
         if (clearUnused) {
             processUnusedElements(model, polygonsToRemove, allVerticesToRemove,
                     textureIndicesToRemove, normalIndicesToRemove);
         } else {
             ModelUtils.removePolygonsFromModel(model, polygonsToRemove);
         }
+        allVerticesToRemove.addAll(originalVertices);
 
         log.info("VERTEX_REMOVAL_SERVICE_REMOVE_POLYGONS_FROM_MODEL: " +
                 "полигоны удалены из модели, осталось полигонов: {}", model.polygons.size());

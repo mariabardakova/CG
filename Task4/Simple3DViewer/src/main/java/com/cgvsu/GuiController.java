@@ -3,6 +3,7 @@ package com.cgvsu;
 import com.cgvsu.model.Polygon;
 import com.cgvsu.objwriter.ObjWriter;
 import com.cgvsu.removers.PolygonRemover;
+import com.cgvsu.removers.vertexremover.VertexRemover;
 import com.cgvsu.removers.vertexremover.VertexRemoverImpl;
 import com.cgvsu.render_engine.RenderEngine;
 import javafx.fxml.FXML;
@@ -14,6 +15,7 @@ import javafx.geometry.Point2D;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -50,6 +52,7 @@ public class GuiController {
 
     private Model hoveredModel = null;
     private Integer hoveredPolygonIndex = null;
+    private Integer hoveredVertexIndex = null;
 
     @FXML
     private Button editVerticesButton;
@@ -74,6 +77,9 @@ public class GuiController {
         editVerticesButton.setStyle(editVerticesMode ?
                 "-fx-background-color: #ff6b6b; -fx-text-fill: white;" :
                 "-fx-background-color: #f0f0f0;");
+        if (editVerticesMode){
+            canvas.requestFocus();
+        }
     }
 
     @FXML
@@ -92,7 +98,10 @@ public class GuiController {
             camera.setAspectRatio((float) (width / height));
 
             for (Model model : activeModels) {
-                RenderEngine.render(canvas.getGraphicsContext2D(), camera, model, (int) width, (int) height, editVerticesMode, (model == hoveredModel) ? hoveredPolygonIndex : null);
+
+                Integer hvi = (model == hoveredModel) ? hoveredVertexIndex : null;
+                Integer hpi = (model == hoveredModel) ? hoveredPolygonIndex : null;
+                RenderEngine.render(canvas.getGraphicsContext2D(), camera, model, (int) width, (int) height, editVerticesMode, hpi, hvi);
             }
         });
 
@@ -113,13 +122,44 @@ public class GuiController {
                     hoveredModel = model;
                     hoveredPolygonIndex = polygonIndex;
                     found = true;
+                    hoveredVertexIndex = null;
                     break;
                 }
             }
-            if (!found){
+            if (!found) {
+                for (Model model : activeModels) {
+                    Integer vertexIndex = findVertexUnderCursor(model, mouseX, mouseY, (int) canvas.getWidth(), (int) canvas.getHeight());
+                    if (vertexIndex != null) {
+                        hoveredModel = model;
+                        hoveredVertexIndex = vertexIndex;
+                        hoveredPolygonIndex = null;
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (!found) {
                 hoveredModel = null;
                 hoveredPolygonIndex = null;
+                hoveredVertexIndex = null;
             }
+        });
+
+        canvas.setFocusTraversable(true);
+        canvas.setOnKeyPressed(event -> {
+            if (!editVerticesMode) return;
+            if(event.getCode() == KeyCode.DELETE){
+                if(hoveredPolygonIndex != null && hoveredModel != null){
+                    removeSelectPolygon(hoveredModel, hoveredPolygonIndex);
+                    hoveredPolygonIndex = null;
+                    hoveredModel = null;
+                }else if (hoveredVertexIndex != null && hoveredModel != null) {
+                    removeSelectedVertex(hoveredModel, hoveredVertexIndex);
+                    hoveredVertexIndex = null;
+                    hoveredModel = null;
+                }
+            }
+
         });
 
         timeline.getKeyFrames().add(frame);
@@ -343,6 +383,56 @@ public class GuiController {
         }
         return inside;
     }
+
+    private void removeSelectPolygon(Model model, int polygonIndex){
+        List<Integer> indices = Collections.singletonList(polygonIndex);
+        PolygonRemover.removePolygons(model, indices, true);
+
+        hoveredVertexIndex = null;
+        hoveredModel = null;
+        hoveredPolygonIndex = null;
+    }
+
+    private Integer findVertexUnderCursor(Model model, double mouseX, double mouseY, int width, int height) {
+        Camera cam = camera;
+        Matrix4f modelMatrix = rotateScaleTranslate();
+        Matrix4f viewMatrix = cam.getViewMatrix();
+        Matrix4f projectionMatrix = cam.getProjectionMatrix();
+
+        Matrix4f mvp = new Matrix4f(modelMatrix);
+        mvp.mul(viewMatrix);
+        mvp.mul(projectionMatrix);
+
+        float threshold = 5.0f;
+
+        for (int i = 0; i < model.vertices.size(); i++) {
+            com.cgvsu.math.Vector3f v3d = model.vertices.get(i);
+            javax.vecmath.Vector3f v = new javax.vecmath.Vector3f(v3d.x, v3d.y, v3d.z);
+            Point2f p = vertexToPoint(multiplyMatrix4ByVector3(mvp, v), width, height);
+
+            if (Float.isFinite(p.x) && Float.isFinite(p.y)) {
+                double dx = p.x - mouseX;
+                double dy = p.y - mouseY;
+                if (dx * dx + dy * dy <= threshold * threshold) {
+                    return i;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void removeSelectedVertex(Model model, int vertexIndex) {
+        Set<Integer> indices = Collections.singleton(vertexIndex);
+        try {
+            VertexRemover remover = new VertexRemoverImpl();
+            remover.removeVertices(model, indices, true);
+            hoveredModel = null;
+            hoveredPolygonIndex = null;
+            hoveredVertexIndex = null;
+        } catch (Exception e) {
+        }
+    }
+
 
     @FXML
     public void handleCameraForward(ActionEvent actionEvent) {
