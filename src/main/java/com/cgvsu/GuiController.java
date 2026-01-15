@@ -24,7 +24,6 @@ import javafx.stage.Stage;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.io.File;
 import java.util.*;
 import javax.vecmath.Matrix4f;
@@ -48,18 +47,34 @@ public class GuiController {
 
     @FXML
     private VBox modelsListContainer;
+    /**
+     *Модель, над которой находится курсор
+     */
     private Model hoveredModel = null;
+    /**
+     * Индекс полигона под курсором
+     */
     private Integer hoveredPolygonIndex = null;
+    /**
+     * Индекс вершины под курсором
+     */
     private Integer hoveredVertexIndex = null;
-    @FXML
-    private Button editVerticesButton;
 
+    /**
+     * Флаг для режима редактирования
+     */
     private boolean editVerticesMode = false;
 
+    /**
+     * Множество скрытых моделей
+     */
     private Set<Model> hiddenModels = new HashSet<>();
     Set<Model> activeModels = new HashSet<>();
 
     private List<Model> models = new ArrayList<>();
+    /**
+     * Счётчик моделей
+     */
     private int modelCounter = 1;
 
     private Camera camera = new Camera(
@@ -69,16 +84,40 @@ public class GuiController {
 
     private Timeline timeline;
 
+    /**
+     * Контейнер для камер (заглушка, нет логики)
+     */
     @FXML
     private VBox camerasContainer;
 
+    /**
+     * Выбор режима камеры
+     */
     @FXML private ComboBox<String> cameraModeCombo;
+    /**
+     * Флажок для инверсии по Y (для Кирилла)
+     */
     @FXML private CheckBox invertYAxisCheckBox;
 
+    /**
+     * Поля ввода для перемещения модели по осям
+     */
     @FXML private TextField transXField, transYField, transZField;
+    /**
+     * Поля ввода для вращения
+     */
     @FXML private TextField rotXField, rotYField, rotZField;
+    /**
+     * Поля ввода для масштабирования
+     */
     @FXML private TextField scaleXField, scaleYField, scaleZField;
 
+    /**
+     * Парсит TextField в double
+     * @param field
+     * @param defaultValue
+     * @return
+     */
     private double parseDouble(TextField field, double defaultValue) {
         try {
             return Double.parseDouble(field.getText().trim());
@@ -88,6 +127,9 @@ public class GuiController {
         }
     }
 
+    /**
+     * Заглушка для чтения значений координат. Нужно удалить
+     */
     @FXML
     private void applyTranslation() {
         double x = parseDouble(transXField, 0.0);
@@ -96,6 +138,9 @@ public class GuiController {
         //возможно, это уже есть в кодах Кирилла.
     }
 
+    /**
+     * Читает углы. Заглушка, тоже удалить
+     */
     @FXML
     private void applyRotation() {
         double x = Math.toDegrees(parseDouble(rotXField, 0.0));
@@ -103,6 +148,9 @@ public class GuiController {
         double z = Math.toDegrees(parseDouble(rotZField, 0.0));
     }
 
+    /**
+     * Заглушка для чтения масштаба. Удалить
+     */
     @FXML
     private void applyScaling() {
         double x = parseDouble(scaleXField, 1.0);
@@ -114,6 +162,9 @@ public class GuiController {
         }
     }
 
+    /**
+     * Вызывает всё вышеперечисленное. Удалить
+     */
     @FXML
     private void applyAllTransformations() {
         applyTranslation();
@@ -121,6 +172,9 @@ public class GuiController {
         applyScaling();
     }
 
+    /**
+     * Сбрасывает поля для ввода. Удалить
+     */
     @FXML
     private void resetTransformations() {
         transXField.setText("0.0");
@@ -138,6 +192,9 @@ public class GuiController {
 
     private Color currentColor = Color.WHITE;
 
+    /**
+     * Открывает диалог выбора цвета
+     */
     @FXML
     private void chooseColor() {
         ColorPicker colorPicker = new ColorPicker(currentColor);
@@ -157,8 +214,14 @@ public class GuiController {
         }
     }
 
+    /**
+     * Счётчик камер
+     */
     private int cameraCnt = 1;
 
+    /**
+     * Добавляет новую камеру. Заглушка.
+     */
     @FXML
     private void addCamera() {
         VBox cameraItem = new VBox(5);
@@ -183,6 +246,11 @@ public class GuiController {
         camerasContainer.getChildren().add(cameraItem);
     }
 
+    /**
+     * Создаёт панель ввода координат
+     * @param title
+     * @return
+     */
     private VBox createVectorPanel(String title) {
         VBox panel = new VBox(5);
 
@@ -209,6 +277,9 @@ public class GuiController {
         return panel;
     }
 
+    /**
+     * Включает и выключает режим редактирования
+     */
     @FXML
     private void toggleEditVerticesMode() {
         editVerticesMode = !editVerticesMode;
@@ -216,13 +287,19 @@ public class GuiController {
             canvas.requestFocus();
         }
     }
+
+    /**
+     * Сбрасывает камеру
+     * @param event
+     */
     @FXML
     private void resetCamera(ActionEvent event) {
         camera.setPosition(new Vector3f(0, 0, 100));
-        camera.setTarget(new Vector3f(0, 0, 0));
-        System.out.println("Камера сброшена");
-    }
+        camera.setTarget(new Vector3f(0, 0, 0));}
 
+    /**
+     * Запускает анимацию рендеринга, настраивает камеру и обработчики.
+     */
     @FXML
     private void initialize() {
         anchorPane.prefWidthProperty().addListener((ov, oldValue, newValue) -> canvas.setWidth(newValue.doubleValue()));
@@ -317,6 +394,9 @@ public class GuiController {
         timeline.play();
     }
 
+    /**
+     * Загрузчик файлов
+     */
     @FXML
     private void onOpenModelMenuItemClick() {
         FileChooser fileChooser = new FileChooser();
@@ -344,9 +424,20 @@ public class GuiController {
         }
     }
 
+
+    /**
+     * Сохраняет все активные модели в один файл(теперь и те, что скрыты)
+     */
     @FXML
     private void onSaveModelMenuItemClick() {
-        if (models.isEmpty()) {
+        List<Model> modelsToSave = new ArrayList<>();
+        for (Model model : models) {
+            if (activeModels.contains(model)) {
+                modelsToSave.add(model);
+            }
+        }
+
+        if (modelsToSave.isEmpty()) {
             return;
         }
 
@@ -362,16 +453,11 @@ public class GuiController {
 
         try {
             StringBuilder sb = new StringBuilder();
+            int v = 0, vt = 0, vn = 0;
 
-            int v = 0;
-            int vt = 0;
-            int vn = 0;
-            for (Model model : models) {
-                if (hiddenModels.contains(model)) continue;
-
+            for (Model model : modelsToSave) {
                 String modelObj = ObjWriter.modelToString(model, null);
                 String fixModel = shiftIndices(modelObj, v, vt, vn);
-
                 sb.append(fixModel).append("\n");
 
                 v += model.getVertices().size();
@@ -382,6 +468,7 @@ public class GuiController {
                     vn += model.getNormals().size();
                 }
             }
+
             Files.writeString(file.toPath(), sb.toString());
         } catch (Exception e) {
             showErrorAlert("Ошибка при сохранении модели",
@@ -390,6 +477,14 @@ public class GuiController {
         }
     }
 
+    /**
+     * Корректирует индексы при сохранении нескольких моделей в один файл
+     * @param objContent
+     * @param vOffset
+     * @param vtOffset
+     * @param vnOffset
+     * @return
+     */
     private String shiftIndices(String objContent, int vOffset, int vtOffset, int vnOffset) {
         if (vOffset == 0 && vtOffset == 0 && vnOffset == 0) {
             return objContent;
@@ -440,6 +535,10 @@ public class GuiController {
         return result.toString();
     }
 
+
+    /**
+     * Обновляет панель списка моделей
+     */
     private void updateModelsListUI() {
         modelsListContainer.getChildren().clear();
 
@@ -509,14 +608,32 @@ public class GuiController {
         }
     }
 
-    private void updateModelButtonStyle(Button button, boolean isA) {
-        if (isA) {
+    /**
+     * Меняет стиль кнопки в зависимости от активности модели
+     *
+     * @param button
+     * @param isActive
+     */
+    private void updateModelButtonStyle(Button button, boolean isActive) {
+        button.getStyleClass().removeAll("model-active", "model-inactive");
+
+        if (isActive) {
             button.getStyleClass().add("model-active");
-         } else {
+        } else {
             button.getStyleClass().add("model-inactive");
         }
     }
 
+    /**
+     * Находит полигон под курсором
+     *
+     * @param model
+     * @param mouseX
+     * @param mouseY
+     * @param width
+     * @param height
+     * @return
+     */
     private Integer findPolygonUnderCursor(Model model, double mouseX, double mouseY, int width, int height) {
         Camera cam = camera;
         Matrix4f modelMatrix = rotateScaleTranslate();
@@ -552,6 +669,13 @@ public class GuiController {
         return null;
     }
 
+    /**
+     * Проверяет, попадает ли точка в полигон
+     * @param x
+     * @param y
+     * @param polygon
+     * @return
+     */
     private boolean isPointInPolygon(float x, float y, List<Point2f> polygon) {
         int n = polygon.size();
         boolean inside = false;
@@ -569,6 +693,11 @@ public class GuiController {
         return inside;
     }
 
+    /**
+     * Удаляет выбранный полигон
+     * @param model
+     * @param polygonIndex
+     */
     private void removeSelectPolygon(Model model, int polygonIndex) {
         try {
             List<Integer> indices = Collections.singletonList(polygonIndex);
@@ -586,6 +715,15 @@ public class GuiController {
         }
     }
 
+    /**
+     * Находит вершину под курсором
+     * @param model
+     * @param mouseX
+     * @param mouseY
+     * @param width
+     * @param height
+     * @return
+     */
     private Integer findVertexUnderCursor(Model model, double mouseX, double mouseY, int width, int height) {
         Camera cam = camera;
         Matrix4f modelMatrix = rotateScaleTranslate();
@@ -614,6 +752,11 @@ public class GuiController {
         return null;
     }
 
+    /**
+     * Удаляет выбранную вершину
+     * @param model
+     * @param vertexIndex
+     */
     private void removeSelectedVertex(Model model, int vertexIndex) {
         Set<Integer> indices = Collections.singleton(vertexIndex);
         try {
@@ -632,6 +775,12 @@ public class GuiController {
         }
     }
 
+    /**
+     * Вызывает диалог ошибки
+     * @param header
+     * @param content
+     * @param details
+     */
     private void showErrorAlert(String header, String content, String details) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Ошибка");
