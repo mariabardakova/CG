@@ -13,11 +13,13 @@ import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.geometry.Pos;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
@@ -46,7 +48,6 @@ public class GuiController {
 
     @FXML
     private VBox modelsListContainer;
-
     private Model hoveredModel = null;
     private Integer hoveredPolygonIndex = null;
     private Integer hoveredVertexIndex = null;
@@ -70,6 +71,91 @@ public class GuiController {
 
     @FXML
     private VBox camerasContainer;
+
+    @FXML private ComboBox<String> cameraModeCombo;
+    @FXML private CheckBox invertYAxisCheckBox;
+
+    @FXML private TextField transXField, transYField, transZField;
+    @FXML private TextField rotXField, rotYField, rotZField;
+    @FXML private TextField scaleXField, scaleYField, scaleZField;
+
+    private double parseDouble(TextField field, double defaultValue) {
+        try {
+            return Double.parseDouble(field.getText().trim());
+        } catch (NumberFormatException e) {
+            showErrorAlert("Некорректное значение", "Поле '" + field.getId() + "' содержит недопустимое число.", e.getMessage());
+            return defaultValue;
+        }
+    }
+
+    @FXML
+    private void applyTranslation() {
+        double x = parseDouble(transXField, 0.0);
+        double y = parseDouble(transYField, 0.0);
+        double z = parseDouble(transZField, 0.0);
+        //возможно, это уже есть в кодах Кирилла.
+    }
+
+    @FXML
+    private void applyRotation() {
+        double x = Math.toDegrees(parseDouble(rotXField, 0.0));
+        double y = Math.toDegrees(parseDouble(rotYField, 0.0));
+        double z = Math.toDegrees(parseDouble(rotZField, 0.0));
+    }
+
+    @FXML
+    private void applyScaling() {
+        double x = parseDouble(scaleXField, 1.0);
+        double y = parseDouble(scaleYField, 1.0);
+        double z = parseDouble(scaleZField, 1.0);
+        if (x == 0 || y == 0 || z == 0) {
+            showErrorAlert("Ошибка масштабирования", "Коэффициент масштабирования не может быть нулевым.", "");
+            return;
+        }
+    }
+
+    @FXML
+    private void applyAllTransformations() {
+        applyTranslation();
+        applyRotation();
+        applyScaling();
+    }
+
+    @FXML
+    private void resetTransformations() {
+        transXField.setText("0.0");
+        transYField.setText("0.0");
+        transZField.setText("0.0");
+
+        rotXField.setText("0.0");
+        rotYField.setText("0.0");
+        rotZField.setText("0.0");
+
+        scaleXField.setText("1.0");
+        scaleYField.setText("1.0");
+        scaleZField.setText("1.0");
+    }
+
+    private Color currentColor = Color.WHITE;
+
+    @FXML
+    private void chooseColor() {
+        ColorPicker colorPicker = new ColorPicker(currentColor);
+        colorPicker.setOnAction(event -> {
+            currentColor = colorPicker.getValue();
+        });
+
+
+        Dialog<Color> dialog = new Dialog<>();
+        dialog.setTitle("Выбор цвета");
+        dialog.getDialogPane().setContent(colorPicker);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        java.util.Optional<Color> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            currentColor = result.get();
+        }
+    }
 
     private int cameraCnt = 1;
 
@@ -130,6 +216,12 @@ public class GuiController {
             canvas.requestFocus();
         }
     }
+    @FXML
+    private void resetCamera(ActionEvent event) {
+        camera.setPosition(new Vector3f(0, 0, 100));
+        camera.setTarget(new Vector3f(0, 0, 0));
+        System.out.println("Камера сброшена");
+    }
 
     @FXML
     private void initialize() {
@@ -139,11 +231,18 @@ public class GuiController {
         timeline = new Timeline();
         timeline.setCycleCount(Animation.INDEFINITE);
 
+        cameraModeCombo.getItems().addAll("Свободное перемещение", "Вращение вокруг цели", "От первого лица");
+        cameraModeCombo.setValue("Свободное перемещение");
+
         KeyFrame frame = new KeyFrame(Duration.millis(15), event -> {
             double width = canvas.getWidth();
             double height = canvas.getHeight();
 
             canvas.getGraphicsContext2D().clearRect(0, 0, width, height);
+            GraphicsContext gc = canvas.getGraphicsContext2D();
+            gc.setFill(Color.rgb(220, 220, 220));
+            gc.fillRect(0, 0, width, height);
+
             camera.setAspectRatio((float) (width / height));
 
             for (Model model : models) {
@@ -388,12 +487,19 @@ public class GuiController {
                     toggleVisibilityBtn.setText("Показать");
                 }
             });
+            item.getChildren().addAll(modelBtn, deleteBtn, toggleVisibilityBtn);
+            modelsListContainer.getChildren().add(item);
+
+            HBox extraButtonsRow = new HBox(5);
+            extraButtonsRow.setAlignment(Pos.CENTER_LEFT);
+            extraButtonsRow.setStyle("-fx-padding: 0 0 5 20;");
 
             Button addTextureBtn = new Button("Добавить текстуру");
             Button removeTextureBtn = new Button("Удалить текстуру");
+            Button polygonBnt = new Button("Полигональная сетка");
 
-            item.getChildren().addAll(modelBtn, deleteBtn, toggleVisibilityBtn, addTextureBtn, removeTextureBtn);
-            modelsListContainer.getChildren().add(item);
+            extraButtonsRow.getChildren().addAll(addTextureBtn, removeTextureBtn, polygonBnt);
+            modelsListContainer.getChildren().add(extraButtonsRow);
         }
     }
 
