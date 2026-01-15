@@ -1,5 +1,4 @@
 package com.cgvsu;
-
 import com.cgvsu.model.Polygon;
 import com.cgvsu.objreader.ObjReader;
 import com.cgvsu.objwriter.ObjWriter;
@@ -56,13 +55,14 @@ public class GuiController {
 
     private boolean editVerticesMode = false;
 
+    private Set<Model> hiddenModels = new HashSet<>();
     Set<Model> activeModels = new HashSet<>();
 
     private List<Model> models = new ArrayList<>();
-    private int modelCounter = 1;;
+    private int modelCounter = 1;
 
     private Camera camera = new Camera(
-            new Vector3f(0, 00, 100),
+            new Vector3f(0, 0, 100),
             new Vector3f(0, 0, 0),
             1.0F, 1, 0.01F, 100);
 
@@ -146,18 +146,20 @@ public class GuiController {
             canvas.getGraphicsContext2D().clearRect(0, 0, width, height);
             camera.setAspectRatio((float) (width / height));
 
-            for (Model model : activeModels) {
+            for (Model model : models) {
+                if (hiddenModels.contains(model)) continue;
 
-                Integer hvi = (model == hoveredModel) ? hoveredVertexIndex : null;
-                Integer hpi = (model == hoveredModel) ? hoveredPolygonIndex : null;
+                Integer hvi = (activeModels.contains(model) && model == hoveredModel) ? hoveredVertexIndex : null;
+                Integer hpi = (activeModels.contains(model) && model == hoveredModel) ? hoveredPolygonIndex : null;
                 RenderEngine.render(canvas.getGraphicsContext2D(), camera, model, (int) width, (int) height, editVerticesMode, hpi, hvi);
             }
         });
 
         canvas.setOnMouseMoved(event -> {
-            if (!editVerticesMode){
+            if (!editVerticesMode) {
                 hoveredModel = null;
                 hoveredPolygonIndex = null;
+                hoveredVertexIndex = null;
                 return;
             }
 
@@ -165,9 +167,10 @@ public class GuiController {
             double mouseY = event.getY();
 
             boolean found = false;
-            for(Model model: activeModels){
+            for (Model model : activeModels) {
+                if (hiddenModels.contains(model)) continue;
                 Integer polygonIndex = findPolygonUnderCursor(model, mouseX, mouseY, (int) canvas.getWidth(), (int) canvas.getHeight());
-                if(polygonIndex != null){
+                if (polygonIndex != null) {
                     hoveredModel = model;
                     hoveredPolygonIndex = polygonIndex;
                     found = true;
@@ -177,6 +180,7 @@ public class GuiController {
             }
             if (!found) {
                 for (Model model : activeModels) {
+                    if (hiddenModels.contains(model)) continue;
                     Integer vertexIndex = findVertexUnderCursor(model, mouseX, mouseY, (int) canvas.getWidth(), (int) canvas.getHeight());
                     if (vertexIndex != null) {
                         hoveredModel = model;
@@ -197,23 +201,18 @@ public class GuiController {
         canvas.setFocusTraversable(true);
         canvas.setOnKeyPressed(event -> {
             if (!editVerticesMode) return;
-            if(event.getCode() == KeyCode.DELETE){
-                if(hoveredPolygonIndex != null && hoveredModel != null){
+            if (event.getCode() == KeyCode.DELETE) {
+                if (hoveredPolygonIndex != null && hoveredModel != null) {
                     removeSelectPolygon(hoveredModel, hoveredPolygonIndex);
                     hoveredPolygonIndex = null;
                     hoveredModel = null;
-                }else if (hoveredVertexIndex != null && hoveredModel != null) {
+                } else if (hoveredVertexIndex != null && hoveredModel != null) {
                     removeSelectedVertex(hoveredModel, hoveredVertexIndex);
                     hoveredVertexIndex = null;
                     hoveredModel = null;
                 }
             }
-
         });
-        System.out.println("activeModels.size() = " + activeModels.size());
-        for (Model m : activeModels) {
-            System.out.println("Модель: вершин=" + m.getVertices().size() + ", полигонов=" + m.getPolygons().size());
-        }
 
         timeline.getKeyFrames().add(frame);
         timeline.play();
@@ -221,7 +220,6 @@ public class GuiController {
 
     @FXML
     private void onOpenModelMenuItemClick() {
-
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Model (*.obj)", "*.obj"));
         fileChooser.setTitle("Загрузить модель");
@@ -230,8 +228,6 @@ public class GuiController {
         if (file == null) {
             return;
         }
-
-        Path fileName = Path.of(file.getAbsolutePath());
 
         try {
             String fileContent = Files.readString(file.toPath());
@@ -242,17 +238,16 @@ public class GuiController {
             activeModels.add(model);
 
             updateModelsListUI();
-            // todo: обработка ошибок
         } catch (Exception e) {
             showErrorAlert("Ошибка при загрузке модели",
                     "Не удалось прочитать файл OBJ.",
                     e.getMessage());
         }
     }
+
     @FXML
     private void onSaveModelMenuItemClick() {
         if (models.isEmpty()) {
-            System.out.println("Нет модели для сохранения!");
             return;
         }
 
@@ -272,7 +267,8 @@ public class GuiController {
             int v = 0;
             int vt = 0;
             int vn = 0;
-            for(Model model : activeModels){
+            for (Model model : models) {
+                if (hiddenModels.contains(model)) continue;
 
                 String modelObj = ObjWriter.modelToString(model, null);
                 String fixModel = shiftIndices(modelObj, v, vt, vn);
@@ -280,15 +276,11 @@ public class GuiController {
                 sb.append(fixModel).append("\n");
 
                 v += model.getVertices().size();
-                if (model.getTextureVertices() != null){
+                if (model.getTextureVertices() != null) {
                     vt += model.getTextureVertices().size();
-                }else{
-                    vt += 0;
                 }
-                if (model.getNormals() != null){
+                if (model.getNormals() != null) {
                     vn += model.getNormals().size();
-                }else{
-                    vn += 0;
                 }
             }
             Files.writeString(file.toPath(), sb.toString());
@@ -354,39 +346,53 @@ public class GuiController {
 
         for (Model model : models) {
             HBox item = new HBox(5);
-            item.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            item.setAlignment(Pos.CENTER_LEFT);
 
             Button modelBtn = new Button(model.getName());
-
             modelBtn.setOnAction(e -> {
                 if (activeModels.contains(model)) {
                     activeModels.remove(model);
+                    if (hoveredModel == model) {
+                        hoveredModel = null;
+                        hoveredPolygonIndex = null;
+                        hoveredVertexIndex = null;
+                    }
                 } else {
                     activeModels.add(model);
+                    if (editVerticesMode) {
+                        canvas.requestFocus();
+                    }
                 }
                 updateModelButtonStyle(modelBtn, activeModels.contains(model));
             });
-
             updateModelButtonStyle(modelBtn, activeModels.contains(model));
 
             Button deleteBtn = new Button("Удалить");
             deleteBtn.setOnAction(e -> {
                 models.remove(model);
                 activeModels.remove(model);
+                hiddenModels.remove(model);
                 updateModelsListUI();
             });
 
+            Button toggleVisibilityBtn = new Button(hiddenModels.contains(model) ? "Показать" : "Скрыть");
+            toggleVisibilityBtn.setOnAction(e -> {
+                if (hiddenModels.contains(model)) {
+                    hiddenModels.remove(model);
+                    toggleVisibilityBtn.setText("Скрыть");
+                    if (editVerticesMode && activeModels.contains(model)) {
+                        canvas.requestFocus();
+                    }
+                } else {
+                    hiddenModels.add(model);
+                    toggleVisibilityBtn.setText("Показать");
+                }
+            });
+
             Button addTextureBtn = new Button("Добавить текстуру");
-            addTextureBtn.setOnAction(e -> {
-                //здесь будет логика добавления
-            });
-
             Button removeTextureBtn = new Button("Удалить текстуру");
-            removeTextureBtn.setOnAction(e -> {
 
-            });
-
-            item.getChildren().addAll(modelBtn, deleteBtn, addTextureBtn, removeTextureBtn);
+            item.getChildren().addAll(modelBtn, deleteBtn, toggleVisibilityBtn, addTextureBtn, removeTextureBtn);
             modelsListContainer.getChildren().add(item);
         }
     }
@@ -399,7 +405,7 @@ public class GuiController {
         }
     }
 
-    private Integer findPolygonUnderCursor(Model model, double mouseX, double mouseY, int width, int height){
+    private Integer findPolygonUnderCursor(Model model, double mouseX, double mouseY, int width, int height) {
         Camera cam = camera;
         Matrix4f modelMatrix = rotateScaleTranslate();
         Matrix4f viewMatrix = cam.getViewMatrix();
@@ -409,13 +415,13 @@ public class GuiController {
         mvp.mul(viewMatrix);
         mvp.mul(projectionMatrix);
 
-        for(int i = 0; i < model.getPolygons().size(); i ++){
+        for (int i = 0; i < model.getPolygons().size(); i++) {
             Polygon polygon = model.getPolygons().get(i);
             List<Integer> vertexIndices = polygon.getVertexIndices();
             if (vertexIndices == null || vertexIndices.isEmpty()) continue;
 
             List<Point2f> screenPoints = new ArrayList<>();
-            for (Integer idx : vertexIndices){
+            for (Integer idx : vertexIndices) {
                 com.cgvsu.math.Vector3f v3d = model.getVertices().get(idx);
                 Vector3f v = new Vector3f(v3d.getX(), v3d.getY(), v3d.getZ());
                 Point2f p = vertexToPoint(multiplyMatrix4ByVector3(mvp, v), width, height);
@@ -425,9 +431,9 @@ public class GuiController {
                 }
                 screenPoints.add(p);
             }
-            if(screenPoints == null || screenPoints.size() < 3) continue;
+            if (screenPoints == null || screenPoints.size() < 3) continue;
 
-            if (isPointInPolygon((float) mouseX, (float) mouseY, screenPoints)){
+            if (isPointInPolygon((float) mouseX, (float) mouseY, screenPoints)) {
                 return i;
             }
         }
@@ -451,18 +457,16 @@ public class GuiController {
         return inside;
     }
 
-    private void removeSelectPolygon(Model model, int polygonIndex){
-
+    private void removeSelectPolygon(Model model, int polygonIndex) {
         try {
             List<Integer> indices = Collections.singletonList(polygonIndex);
             PolygonRemover.removePolygons(model, indices, true);
-
             hoveredVertexIndex = null;
             hoveredModel = null;
             hoveredPolygonIndex = null;
         } catch (Exception e) {
-            showErrorAlert("Ошибка при удалении вершины",
-                    "Невозможно удалить выбранную вершину.",
+            showErrorAlert("Ошибка при удалении полигона",
+                    "Невозможно удалить выбранный полигон.",
                     e.getMessage());
             hoveredModel = null;
             hoveredVertexIndex = null;
@@ -510,7 +514,6 @@ public class GuiController {
             showErrorAlert("Ошибка при удалении вершины",
                     "Невозможно удалить выбранную вершину.",
                     e.getMessage());
-
             hoveredModel = null;
             hoveredVertexIndex = null;
             hoveredPolygonIndex = null;
@@ -522,12 +525,9 @@ public class GuiController {
         alert.setTitle("Ошибка");
         alert.setHeaderText(header);
         alert.setContentText(content + "\n\nДетали: " + (details != null ? details : "—"));
-
         alert.getButtonTypes().setAll(ButtonType.OK);
-
         alert.showAndWait();
     }
-
 
     @FXML
     public void handleCameraForward(ActionEvent actionEvent) {
