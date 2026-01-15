@@ -147,15 +147,15 @@ public class ObjReader {
 	// Это бывает очень полезно и с точки зрения структурирования алгоритма в голове, и с точки зрения тестирования.
 	// В радикальных случаях не бойтесь выносить в отдельные методы и тестировать код из одной-двух строчек.
 	public static void parseFaceWord(
-            String wordInLine,
-            ArrayList<Integer> onePolygonVertexIndices,
-            ArrayList<Integer> onePolygonTextureVertexIndices,
-            ArrayList<Integer> onePolygonNormalIndices,
-            int lineInd,
-            int vertCnt,
-            int texVertCnt,
-            int normalsCnt
-    ) {
+			String wordInLine,
+			ArrayList<Integer> onePolygonVertexIndices,
+			ArrayList<Integer> onePolygonTextureVertexIndices,
+			ArrayList<Integer> onePolygonNormalIndices,
+			int lineInd,
+			int vertCnt,
+			int texVertCnt,
+			int normalsCnt
+	) {
 		try {
 			String[] wordIndices = wordInLine.split("/");
 			switch (wordIndices.length) {
