@@ -448,6 +448,7 @@ public class GuiController {
             item.setAlignment(Pos.CENTER_LEFT);
 
             Button modelBtn = new Button(model.getName());
+            modelBtn.getStyleClass().add("model-button");
             modelBtn.setOnAction(e -> {
                 if (activeModels.contains(model)) {
                     activeModels.remove(model);
@@ -467,6 +468,7 @@ public class GuiController {
             updateModelButtonStyle(modelBtn, activeModels.contains(model));
 
             Button deleteBtn = new Button("Удалить");
+            deleteBtn.getStyleClass().add("model-button");
             deleteBtn.setOnAction(e -> {
                 models.remove(model);
                 activeModels.remove(model);
@@ -475,6 +477,7 @@ public class GuiController {
             });
 
             Button toggleVisibilityBtn = new Button(hiddenModels.contains(model) ? "Показать" : "Скрыть");
+            toggleVisibilityBtn.getStyleClass().add("model-button");
             toggleVisibilityBtn.setOnAction(e -> {
                 if (hiddenModels.contains(model)) {
                     hiddenModels.remove(model);
@@ -495,8 +498,11 @@ public class GuiController {
             extraButtonsRow.setStyle("-fx-padding: 0 0 5 20;");
 
             Button addTextureBtn = new Button("Добавить текстуру");
+            addTextureBtn.getStyleClass().add("extra-button");
             Button removeTextureBtn = new Button("Удалить текстуру");
+            removeTextureBtn.getStyleClass().add("extra-button");
             Button polygonBnt = new Button("Полигональная сетка");
+            polygonBnt.getStyleClass().add("extra-button");
 
             extraButtonsRow.getChildren().addAll(addTextureBtn, removeTextureBtn, polygonBnt);
             modelsListContainer.getChildren().add(extraButtonsRow);
@@ -505,9 +511,9 @@ public class GuiController {
 
     private void updateModelButtonStyle(Button button, boolean isA) {
         if (isA) {
-            button.setStyle("-fx-font-weight: bold; -fx-background-color: #cce5ff; -fx-border-color: #007bff; -fx-border-width: 1;");
-        } else {
-            button.setStyle("-fx-font-weight: normal; -fx-background-color: white; -fx-border-color: #ccc; -fx-border-width: 1;");
+            button.getStyleClass().add("model-active");
+         } else {
+            button.getStyleClass().add("model-inactive");
         }
     }
 
