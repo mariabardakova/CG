@@ -7,11 +7,11 @@ import java.util.List;
 
 public class Normalization {
 
-    public static List<Vector3f> getVertexNormals(
-            final List<Vector3f> vertexes,
-            final List<Polygon> polygons) {
+    public static ArrayList<Vector3f> getVertexNormals(
+            final ArrayList<Vector3f> vertexes,
+            final ArrayList<Polygon> polygons) {
 
-        List<Vector3f> normals = new ArrayList<>();
+        ArrayList<Vector3f> normals = new ArrayList<>();
         for (int i = 0; i < vertexes.size(); i++) {
             normals.add(new Vector3f(0, 0, 0));
         }

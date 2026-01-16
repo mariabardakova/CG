@@ -3,6 +3,8 @@ package com.cgvsu.model;
 import com.cgvsu.math.Transformation;
 import com.cgvsu.math.Vector2f;
 import com.cgvsu.math.Vector3f;
+import com.cgvsu.triangulation.Triangulation;
+import com.cgvsu.normalization.Normalization;
 
 import java.util.*;
 
@@ -95,6 +97,16 @@ public class Model {
 
         return copy;
     }
+
+
+    public void normalizationPolygons() {
+        normals = Normalization.getVertexNormals(vertices, polygons);
+    }
+
+    public void triangulatePolygons() {
+        polygons = Triangulation.triangulate(polygons);
+    }
+
 
     // Геттеры и сеттеры
     public ArrayList<Vector3f> getVertices() {
