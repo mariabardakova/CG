@@ -1,4 +1,4 @@
-package com.cgvsu.render_engine;
+package com.cgvsu.render_engine_old;
 
 import java.util.ArrayList;
 import com.cgvsu.math.Vector3f;
@@ -8,7 +8,7 @@ import javafx.scene.canvas.GraphicsContext;
 import com.cgvsu.model.Model;
 import javafx.scene.paint.Color;
 
-import static com.cgvsu.render_engine.GraphicConveyor.*;
+import static com.cgvsu.render_engine_old.GraphicConveyor.*;
 
 public class RenderEngine {
 
@@ -43,33 +43,10 @@ public class RenderEngine {
             }
 
             ArrayList<Point2f> resultPoints = new ArrayList<>();
-            boolean validPolygon = true;
-            
             for (int vertexInPolygonInd = 0; vertexInPolygonInd < nVerticesInPolygon; ++vertexInPolygonInd) {
                 Vector3f vertex = mesh.getVertices().get(mesh.getPolygons().get(polygonInd).getVertexIndices().get(vertexInPolygonInd));
-                Vector3f transformedVertex = multiplyMatrix4ByVector3(modelViewProjectionMatrix, vertex);
-                
-                // Проверяем, что вершина видима (находится перед камерой)
-                // В перспективной проекции, если z > 1.0, вершина позади камеры
-                if (transformedVertex.z > 1.0f || transformedVertex.z < -1.0f) {
-                    validPolygon = false;
-                    break;
-                }
-                
-                Point2f resultPoint = vertexToPoint(transformedVertex, width, height);
-                
-                // Проверяем на NaN и бесконечность
-                if (!Float.isFinite(resultPoint.x) || !Float.isFinite(resultPoint.y)) {
-                    validPolygon = false;
-                    break;
-                }
-                
+                Point2f resultPoint = vertexToPoint(multiplyMatrix4ByVector3(modelViewProjectionMatrix, vertex), width, height);
                 resultPoints.add(resultPoint);
-            }
-            
-            // Рисуем полигон только если он валиден и имеет хотя бы 3 вершины
-            if (!validPolygon || resultPoints.size() < 3) {
-                continue;
             }
 
             for (int vertexInPolygonInd = 1; vertexInPolygonInd < nVerticesInPolygon; ++vertexInPolygonInd) {
@@ -87,18 +64,10 @@ public class RenderEngine {
                         resultPoints.get(0).x,
                         resultPoints.get(0).y);
         }
-        
         if (showVertices && mesh.getVertices() != null) {
             for (int i = 0; i < mesh.getVertices().size(); i++) {
                 Vector3f vertex = mesh.getVertices().get(i);
-                Vector3f transformedVertex = multiplyMatrix4ByVector3(modelViewProjectionMatrix, vertex);
-                
-                // Пропускаем вершины, которые позади камеры
-                if (transformedVertex.z > 1.0f) {
-                    continue;
-                }
-                
-                Point2f screenPoint = vertexToPoint(transformedVertex, width, height);
+                Point2f screenPoint = vertexToPoint(multiplyMatrix4ByVector3(modelViewProjectionMatrix, vertex), width, height);
                 if (Float.isFinite(screenPoint.x) && Float.isFinite(screenPoint.y)) {
                     if (highlightedVertexIndex != null && i == highlightedVertexIndex) {
                         graphicsContext.setFill(Color.ORANGE);
