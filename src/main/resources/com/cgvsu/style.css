@@ -1,0 +1,48 @@
+.tool-panel {
+    -fx-background-color: #f0f0f0;
+    -fx-padding: 10;
+}
+
+.section-title {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.apply-button {
+    -fx-min-width: 80;
+    -fx-pref-width: 80;
+}
+.action-button {
+    -fx-min-width: 150;
+    -fx-pref-width: 150;
+}
+.wide-button {
+    -fx-min-width: 150;
+    -fx-pref-width: 150;
+}
+.model-button {
+    -fx-min-width: 150;
+    -fx-pref-width: 150`;
+}
+.extra-button {
+    -fx-min-width: 100;
+    -fx-pref-width: 100;
+}
+
+.divider {
+    -fx-border-color: #ccc;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 5 0 0 0;
+}
+.model-active {
+    -fx-font-weight: bold;
+    -fx-background-color: #cce5ff;
+    -fx-border-color: #007bff;
+    -fx-border-width: 1;
+}
+.model-inactive {
+    -fx-font-weight: normal;
+    -fx-background-color: white;
+    -fx-border-color: #ccc;
+    -fx-border-width: 1;
+}

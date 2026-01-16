@@ -10,48 +10,113 @@
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ComboBox?>
 
-<AnchorPane fx:id="anchorPane" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.cgvsu.GuiController">
+<AnchorPane fx:id="anchorPane" stylesheets="@../style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.cgvsu.GuiController">
+    <Canvas fx:id="canvas" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+            AnchorPane.leftAnchor="250" AnchorPane.rightAnchor="0" />
 
-    <Canvas fx:id="canvas" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="250" AnchorPane.rightAnchor="0" />
+    <ScrollPane AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" fitToWidth="true">
+        <VBox spacing="10" prefWidth="500" styleClass="tool-panel"
+              AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0">
 
-    <VBox spacing="10" prefWidth="350" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" style="-fx-padding: 10; -fx-background-color: white;">
+            <HBox spacing="10">
+                <MenuButton text="Файл">
+                    <items>
+                        <MenuItem mnemonicParsing="false" onAction="#onOpenModelMenuItemClick" text="Загрузить модель">
+                            <accelerator>
+                                <KeyCodeCombination alt="UP" code="F" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                            </accelerator>
+                        </MenuItem>
+                        <MenuItem mnemonicParsing="false" onAction="#onSaveModelMenuItemClick" text="Сохранить модель">
+                            <accelerator>
+                                <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                            </accelerator>
+                        </MenuItem>
+                    </items>
+                </MenuButton>
 
-        <HBox spacing="10" style="-fx-padding: 0 0 10 0;">
-            <MenuButton text="Файл" style="-fx-font-size: 14px; -fx-font-weight: bold;">
-                <items>
-                    <MenuItem mnemonicParsing="false" onAction="#onOpenModelMenuItemClick" text="Загрузить модель">
-                        <accelerator>
-                            <KeyCodeCombination alt="UP" code="F" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                        </accelerator>
-                    </MenuItem>
-                    <MenuItem mnemonicParsing="false" onAction="#onSaveModelMenuItemClick" text="Сохранить модель">
-                        <accelerator>
-                            <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                        </accelerator>
-                    </MenuItem>
-                </items>
-            </MenuButton>
+                <Button fx:id="editVerticesButton" text="Удалить вершину/полигон"
+                        onAction="#toggleEditVerticesMode" styleClass="model-button"/>
+            </HBox>
+            <Label text="" styleClass="divider" />
 
-            <Button fx:id="editVerticesButton" text="Режим редактирования" onAction="#toggleEditVerticesMode" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
-        </HBox>
+            <TitledPane animated="true" collapsible="true" text="Модели" expanded="true">
+                <VBox fx:id="modelsListContainer" spacing="5" />
+            </TitledPane>
 
-        <Label text="" style="-fx-border-color: #ccc; -fx-border-width: 0 0 1 0; -fx-padding: 5 0;" />
+            <TitledPane animated="true" collapsible="true" text="Камера" expanded="true">
+                <VBox fx:id="camerasContainer" spacing="10">
+                    <Button text="Добавить камеру" onAction="#addCamera" styleClass="action-button"/>
+                </VBox>
+            </TitledPane>
 
-        <TitledPane animated="true" collapsible="true" text="Модели" expanded="true">
-            <VBox fx:id="modelsListContainer" spacing="5" />
-        </TitledPane>
+            <TitledPane animated="true" collapsible="true" text="Освещение" expanded="true">
+                <VBox spacing="5">
+                    <CheckBox fx:id="useLightingCheckBox" text="Использовать освещение" />
+                    <Button text="Выбрать цвет" onAction="#chooseColor" styleClass="action-button"/>
+                </VBox>
+            </TitledPane>
 
-        <TitledPane animated="true" collapsible="true" text="Камера" expanded="true">
-            <VBox fx:id="camerasContainer" spacing="10" style="-fx-padding: 5;">
-                <Button text="Добавить камеру" onAction="#addCamera" />
-            </VBox>
-        </TitledPane>
+            <TitledPane animated="true" collapsible="true" text="Управление трансформациями" expanded="true">
+                <VBox spacing="15">
+                    <VBox spacing="5">
+                        <Label text="Перемещение" styleClass="section-title"/>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <VBox spacing="5">
+                                <HBox spacing="5"><Label text="X:" /><TextField fx:id="transXField" text="0.0" styleClass="text-field"/></HBox>
+                                <HBox spacing="5"><Label text="Y:" /><TextField fx:id="transYField" text="0.0" styleClass="text-field"/></HBox>
+                                <HBox spacing="5"><Label text="Z:" /><TextField fx:id="transZField" text="0.0" styleClass="text-field"/></HBox>
+                            </VBox>
+                            <Button text="Применить" onAction="#applyTranslation" styleClass="apply-button"/>
+                        </HBox>
+                    </VBox>
 
-        <TitledPane animated="true" collapsible="true" text="Освещение" expanded="true">
-            <Label text="— Пока не реализовано —" style="-fx-padding: 5;" />
-        </TitledPane>
+                    <VBox spacing="5">
+                        <Label text="Вращение (градусы)" styleClass="section-title"/>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <VBox spacing="5">
+                                <HBox spacing="5"><Label text="X:" /><TextField fx:id="rotXField" text="0.0" styleClass="text-field"/></HBox>
+                                <HBox spacing="5"><Label text="Y:" /><TextField fx:id="rotYField" text="0.0" styleClass="text-field"/></HBox>
+                                <HBox spacing="5"><Label text="Z:" /><TextField fx:id="rotZField" text="0.0" styleClass="text-field"/></HBox>
+                            </VBox>
+                            <Button text="Применить" onAction="#applyRotation" styleClass="apply-button"/>
+                        </HBox>
+                    </VBox>
 
-    </VBox>
+                    <VBox spacing="5">
+                        <Label text="Масштабирование" styleClass="section-title"/>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <VBox spacing="5">
+                                <HBox spacing="5"><Label text="X:" /><TextField fx:id="scaleXField" text="1.0" styleClass="text-field"/></HBox>
+                                <HBox spacing="5"><Label text="Y:" /><TextField fx:id="scaleYField" text="1.0" styleClass="text-field"/></HBox>
+                                <HBox spacing="5"><Label text="Z:" /><TextField fx:id="scaleZField" text="1.0" styleClass="text-field"/></HBox>
+                            </VBox>
+                            <Button text="Применить" onAction="#applyScaling" styleClass="apply-button"/>
+                        </HBox>
+                    </VBox>
 
+                    <HBox spacing="10" alignment="CENTER">
+                        <Button text="Применить все" onAction="#applyAllTransformations" styleClass="wide-button"/>
+                        <Button text="Сбросить" onAction="#resetTransformations" styleClass="wide-button"/>
+                    </HBox>
+                </VBox>
+            </TitledPane>
+
+            <TitledPane animated="true" collapsible="true" text="Управление камерой" expanded="true">
+                <VBox spacing="12">
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Режим:" styleClass="section-title"/>
+                        <ComboBox fx:id="cameraModeCombo" styleClass="combo-box"/>
+                    </HBox>
+                    <CheckBox fx:id="invertYAxisCheckBox" text="Инвертировать ось Y" />
+                    <Button text="Сбросить" onAction="#resetCamera" styleClass="action-button"/>
+                </VBox>
+            </TitledPane>
+
+        </VBox>
+    </ScrollPane>
 </AnchorPane>
