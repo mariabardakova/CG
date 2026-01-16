@@ -38,11 +38,21 @@ import javax.vecmath.Matrix4f;
 import javax.vecmath.Point2f;
 import javax.vecmath.Vector3f;
 
+import com.cgvsu.model.Model;
+import com.cgvsu.render_engine.Camera;
+import com.cgvsu.triangulation.Triangulation;
+import com.cgvsu.triangulation.TriangleRasterization;
+
 import static com.cgvsu.render_engine.GraphicConveyor.*;
 
 public class GuiController {
 
     final private float TRANSLATION = 0.5F;
+
+    private boolean showTriangles = false;
+
+    private Map<Model, Boolean> modelTriangleMode = new HashMap<>();
+    private Map<Model, Color> modelColors = new HashMap<>();
 
     @FXML
     AnchorPane anchorPane;
@@ -133,7 +143,6 @@ public class GuiController {
             return defaultValue;
         }
     }
-
     @FXML
     private void toggleDarkTheme() {
         Scene scene = canvas.getScene();
@@ -148,7 +157,6 @@ public class GuiController {
             toggleThemeButton.setText("Светлая тема");
         }
     }
-
 
     private Color currentColor = Color.WHITE;
 
@@ -171,6 +179,30 @@ public class GuiController {
         java.util.Optional<Color> result = dialog.showAndWait();
         if (result.isPresent()) {
             currentColor = result.get();
+        }
+    }
+
+    private void chooseColorForModel(Model model) {
+        ColorPicker colorPicker = new ColorPicker();
+
+        Color currentModelColor = modelColors.getOrDefault(model, Color.WHITE);
+        colorPicker.setValue(currentModelColor);
+
+        Dialog<Color> dialog = new Dialog<>();
+        dialog.setTitle("Выбор цвета для " + model.getName());
+        dialog.getDialogPane().setContent(colorPicker);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                return colorPicker.getValue();
+            }
+            return null;
+        });
+
+        Optional<Color> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            modelColors.put(model, result.get());
         }
     }
 
@@ -272,15 +304,34 @@ public class GuiController {
             gc.setFill(bgColor);
             gc.fillRect(0, 0, width, height);
 
+            Color strokeColor = canvas.getScene().getRoot().getStyleClass().contains("dark-theme")
+                    ? Color.WHITE : Color.BLACK;
+
             camera.setAspectRatio((float) (width / height));
 
             for (Model model : models) {
                 if (hiddenModels.contains(model)) continue;
 
-                Integer hvi = (activeModels.contains(model) && model == hoveredModel) ? hoveredVertexIndex : null;
-                Integer hpi = (activeModels.contains(model) && model == hoveredModel) ? hoveredPolygonIndex : null;
-                Color strokeColor = canvas.getScene().getRoot().getStyleClass().contains("dark-theme") ? Color.WHITE : Color.BLACK;
-                RenderEngine.render(canvas.getGraphicsContext2D(), camera, model, (int) width, (int) height, editVerticesMode, hpi, hvi, strokeColor);            }
+                if (isTriangleModeEnabled(model)) {
+                    // ПОЛИГОНАЛЬНЫЙ РЕЖИМ - КОНТУРЫ
+                    renderTriangles(gc, model, camera, (int)width, (int)height);
+                } else {
+                    // ОБЫЧНЫЙ РЕЖИМ
+                    if (modelColors.containsKey(model)) {
+                        // Обычный режим С ЦВЕТОМ - ЗАЛИВКА
+                        renderFilledTriangles(gc, model, camera, (int)width, (int)height);
+
+                        // Если нужно, можно добавить контур поверх заливки:
+                        // renderTriangles(gc, model, camera, (int)width, (int)height);
+                    } else {
+                        // Обычный режим БЕЗ ЦВЕТА (старый способ)
+                        RenderEngine.render(gc, camera, model, (int)width, (int)height,
+                                editVerticesMode,
+                                model == hoveredModel ? hoveredPolygonIndex : null,
+                                model == hoveredModel ? hoveredVertexIndex : null, strokeColor);
+                    }
+                }
+            }
         });
 
         canvas.setOnMouseMoved(event -> {
@@ -558,8 +609,10 @@ public class GuiController {
             removeTextureBtn.getStyleClass().add("extra-button");
             Button polygonBnt = new Button("Полигональная сетка");
             polygonBnt.getStyleClass().add("extra-button");
+            Button colorBtn = new Button("Добавить цвет");
+            colorBtn.getStyleClass().add("extra-button");
 
-            extraButtonsRow.getChildren().addAll(addTextureBtn, removeTextureBtn, polygonBnt);
+            extraButtonsRow.getChildren().addAll(addTextureBtn, removeTextureBtn, polygonBnt, colorBtn);
             modelsListContainer.getChildren().add(extraButtonsRow);
 
             HBox transformRow = new HBox(5);
@@ -574,6 +627,23 @@ public class GuiController {
 
             transformRow.getChildren().add(transformBtn);
             modelsListContainer.getChildren().add(transformRow);
+
+            colorBtn.setOnAction(e -> {
+                chooseColorForModel(model);
+            });
+
+            polygonBnt.setOnAction(e -> {
+                // Меняем состояние для текущей модели
+                if (activeModels.contains(model)) {
+                    toggleTriangleMode(model);
+
+                    // Получаем ТЕКУЩЕЕ состояние после переключения
+                    boolean isTriangleMode = isTriangleModeEnabled(model);
+
+                    // Устанавливаем текст в зависимости от текущего состояния
+                    polygonBnt.setText(isTriangleMode ? "Обычный вид" : "Полигональная сетка");
+                }
+            });
         }
     }
 
@@ -584,38 +654,38 @@ public class GuiController {
     private void showTransformationDialog(Model model) {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Трансформации модели: " + model.getName());
-        
+
         // Получаем текущие значения трансформаций модели
         float currentTx = model.getTranslationX();
         float currentTy = model.getTranslationY();
         float currentTz = model.getTranslationZ();
-        
+
         float currentRx = model.getRotationX();
         float currentRy = model.getRotationY();
         float currentRz = model.getRotationZ();
-        
+
         float currentSx = model.getScaleX();
         float currentSy = model.getScaleY();
         float currentSz = model.getScaleZ();
-        
+
         // Создаем поля ввода с текущими значениями, используя Locale.US для точки
         TextField transX = new TextField(String.format(Locale.US, "%.2f", currentTx));
         TextField transY = new TextField(String.format(Locale.US, "%.2f", currentTy));
         TextField transZ = new TextField(String.format(Locale.US, "%.2f", currentTz));
-        
+
         TextField rotX = new TextField(String.format(Locale.US, "%.2f", currentRx));
         TextField rotY = new TextField(String.format(Locale.US, "%.2f", currentRy));
         TextField rotZ = new TextField(String.format(Locale.US, "%.2f", currentRz));
-        
+
         TextField scaleX = new TextField(String.format(Locale.US, "%.2f", currentSx));
         TextField scaleY = new TextField(String.format(Locale.US, "%.2f", currentSy));
         TextField scaleZ = new TextField(String.format(Locale.US, "%.2f", currentSz));
-        
+
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
         grid.setPadding(new Insets(10, 10, 10, 10));
-        
+
         // Добавляем элементы в GridPane
         grid.add(new Label("Перемещение:"), 0, 0);
         grid.add(new Label("X:"), 0, 1);
@@ -624,7 +694,7 @@ public class GuiController {
         grid.add(transY, 1, 2);
         grid.add(new Label("Z:"), 0, 3);
         grid.add(transZ, 1, 3);
-        
+
         grid.add(new Label("Вращение (градусы):"), 0, 4);
         grid.add(new Label("X:"), 0, 5);
         grid.add(rotX, 1, 5);
@@ -632,7 +702,7 @@ public class GuiController {
         grid.add(rotY, 1, 6);
         grid.add(new Label("Z:"), 0, 7);
         grid.add(rotZ, 1, 7);
-        
+
         grid.add(new Label("Масштабирование:"), 0, 8);
         grid.add(new Label("X:"), 0, 9);
         grid.add(scaleX, 1, 9);
@@ -640,14 +710,14 @@ public class GuiController {
         grid.add(scaleY, 1, 10);
         grid.add(new Label("Z:"), 0, 11);
         grid.add(scaleZ, 1, 11);
-        
+
         dialog.getDialogPane().setContent(grid);
-        
+
         // Кнопки
         ButtonType applyButton = new ButtonType("Применить", ButtonBar.ButtonData.OK_DONE);
         ButtonType resetButton = new ButtonType("Сбросить", ButtonBar.ButtonData.OTHER);
         dialog.getDialogPane().getButtonTypes().addAll(applyButton, resetButton, ButtonType.CANCEL);
-        
+
         // Обработка кнопки "Сбросить"
         Button resetButtonNode = (Button) dialog.getDialogPane().lookupButton(resetButton);
         resetButtonNode.setOnAction(e -> {
@@ -663,36 +733,36 @@ public class GuiController {
             scaleY.setText(String.format(Locale.US, "%.1f", 1.0f));
             scaleZ.setText(String.format(Locale.US, "%.1f", 1.0f));
         });
-        
+
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == applyButton) {
                 try {
                     float tx = Float.parseFloat(transX.getText());
                     float ty = Float.parseFloat(transY.getText());
                     float tz = Float.parseFloat(transZ.getText());
-                    
+
                     float rx = Float.parseFloat(rotX.getText());
                     float ry = Float.parseFloat(rotY.getText());
                     float rz = Float.parseFloat(rotZ.getText());
-                    
+
                     float sx = Float.parseFloat(scaleX.getText());
                     float sy = Float.parseFloat(scaleY.getText());
                     float sz = Float.parseFloat(scaleZ.getText());
                     if (sx == 0 || sy == 0 || sz == 0) {
-                        showErrorAlert("Ошибка масштабирования", 
+                        showErrorAlert("Ошибка масштабирования",
                             "Коэффициент масштабирования не может быть нулевым.", "");
                         return null;
                     }
-                    
+
                     model.setAllTransformations(tx, ty, tz, rx, ry, rz, sx, sy, sz);
                 } catch (NumberFormatException ex) {
-                    showErrorAlert("Ошибка ввода", "Некорректные числовые значения", 
+                    showErrorAlert("Ошибка ввода", "Некорректные числовые значения",
                         "Используйте формат: 0.00 или 0,00");
                 }
             }
             return null;
         });
-        
+
         dialog.showAndWait();
     }
 
@@ -723,6 +793,9 @@ public class GuiController {
      * @param height
      * @return
      */
+
+
+
     private Integer findPolygonUnderCursor(Model model, double mouseX, double mouseY, int width, int height) {
         Camera cam = camera;
         Matrix4f modelMatrix = rotateScaleTranslate();
@@ -804,6 +877,14 @@ public class GuiController {
         }
     }
 
+    private void toggleTriangleMode(Model model) {
+        modelTriangleMode.put(model, !modelTriangleMode.getOrDefault(model, false));
+    }
+
+    private boolean isTriangleModeEnabled(Model model) {
+        return modelTriangleMode.getOrDefault(model, false);
+    }
+
     /**
      * Находит вершину под курсором
      * @param model
@@ -864,6 +945,94 @@ public class GuiController {
         }
     }
 
+    private void renderTriangles(GraphicsContext gc, Model model, Camera camera,
+                                 int width, int height) {
+        // Триангулируем
+        ArrayList<Polygon> triangles = Triangulation.triangulate(
+                new ArrayList<>(model.getPolygons()));
+
+        // Матрицы преобразования
+        Matrix4f modelMatrix = rotateScaleTranslate();
+        Matrix4f viewMatrix = camera.getViewMatrix();
+        Matrix4f projectionMatrix = camera.getProjectionMatrix();
+        Matrix4f mvp = new Matrix4f(modelMatrix);
+        mvp.mul(viewMatrix);
+        mvp.mul(projectionMatrix);
+
+        // Получаем цвет модели или используем синий по умолчанию
+        Color modelColor = modelColors.getOrDefault(model, Color.BLUE);
+
+        // ПОЛИГОНАЛЬНЫЙ РЕЖИМ - РИСУЕМ КОНТУРЫ (drawTriangle вместо fillTriangle)
+        for (Polygon triangle : triangles) {
+            List<Integer> indices = triangle.getVertexIndices();
+            if (indices.size() != 3) continue;
+
+            int[] xPoints = new int[3];
+            int[] yPoints = new int[3];
+
+            // Получаем экранные координаты
+            for (int i = 0; i < 3; i++) {
+                com.cgvsu.math.Vector3f vertex = model.getVertices().get(indices.get(i));
+                javax.vecmath.Vector3f v = new javax.vecmath.Vector3f(
+                        vertex.x, vertex.y, vertex.z);
+                Point2f screen = vertexToPoint(multiplyMatrix4ByVector3(mvp, v), width, height);
+                xPoints[i] = Math.round(screen.x);
+                yPoints[i] = Math.round(screen.y);
+            }
+
+            // ВАЖНО: В полигональном режиме рисуем КОНТУРЫ (drawTriangle)
+            TriangleRasterization.drawTriangle(gc,
+                    xPoints[0], yPoints[0],
+                    xPoints[1], yPoints[1],
+                    xPoints[2], yPoints[2],
+                    modelColor);
+        }
+    }
+
+    private void renderFilledTriangles(GraphicsContext gc, Model model, Camera camera,
+                                 int width, int height) {
+        // Триангулируем
+        ArrayList<Polygon> triangles = Triangulation.triangulate(
+                new ArrayList<>(model.getPolygons()));
+
+        // Матрицы преобразования
+        Matrix4f modelMatrix = rotateScaleTranslate();
+        Matrix4f viewMatrix = camera.getViewMatrix();
+        Matrix4f projectionMatrix = camera.getProjectionMatrix();
+        Matrix4f mvp = new Matrix4f(modelMatrix);
+        mvp.mul(viewMatrix);
+        mvp.mul(projectionMatrix);
+
+        // Получаем цвет модели или используем синий по умолчанию
+        Color modelColor = modelColors.getOrDefault(model, Color.BLUE);
+
+        // В ПОЛИГОНАЛЬНОМ РЕЖИМЕ РИСУЕМ КОНТУРЫ, а не заливку
+        for (Polygon triangle : triangles) {
+            List<Integer> indices = triangle.getVertexIndices();
+            if (indices.size() != 3) continue;
+
+            int[] xPoints = new int[3];
+            int[] yPoints = new int[3];
+
+            // Получаем экранные координаты
+            for (int i = 0; i < 3; i++) {
+                com.cgvsu.math.Vector3f vertex = model.getVertices().get(indices.get(i));
+                javax.vecmath.Vector3f v = new javax.vecmath.Vector3f(
+                        vertex.x, vertex.y, vertex.z);
+                Point2f screen = vertexToPoint(multiplyMatrix4ByVector3(mvp, v), width, height);
+                xPoints[i] = Math.round(screen.x);
+                yPoints[i] = Math.round(screen.y);
+            }
+
+            // ВАЖНО: В полигональном режиме рисуем КОНТУРЫ треугольников
+            TriangleRasterization.fillTriangle(gc,
+                    xPoints[0], yPoints[0],
+                    xPoints[1], yPoints[1],
+                    xPoints[2], yPoints[2],
+                    modelColor);
+        }
+    }
+
     /**
      * Вызывает диалог ошибки
      * @param header
@@ -888,7 +1057,7 @@ public class GuiController {
         double x = parseDouble(transXField, 0.0);
         double y = parseDouble(transYField, 0.0);
         double z = parseDouble(transZField, 0.0);
-        
+
         for (Model model : activeModels) {
             if (!hiddenModels.contains(model)) {
                 model.applyTranslation((float)x, (float)y, (float)z);
@@ -904,7 +1073,7 @@ public class GuiController {
         double x = parseDouble(rotXField, 0.0);
         double y = parseDouble(rotYField, 0.0);
         double z = parseDouble(rotZField, 0.0);
-        
+
         for (Model model : activeModels) {
             if (!hiddenModels.contains(model)) {
                 model.applyRotation((float)x, (float)y, (float)z);
@@ -920,12 +1089,12 @@ public class GuiController {
         double x = parseDouble(scaleXField, 1.0);
         double y = parseDouble(scaleYField, 1.0);
         double z = parseDouble(scaleZField, 1.0);
-        
+
         if (x == 0 || y == 0 || z == 0) {
             showErrorAlert("Ошибка масштабирования", "Коэффициент масштабирования не может быть нулевым.", "");
             return;
         }
-        
+
         for (Model model : activeModels) {
             if (!hiddenModels.contains(model)) {
                 model.applyScaling((float)x, (float)y, (float)z);
@@ -941,20 +1110,20 @@ public class GuiController {
         double tx = parseDouble(transXField, 0.0);
         double ty = parseDouble(transYField, 0.0);
         double tz = parseDouble(transZField, 0.0);
-        
+
         double rx = parseDouble(rotXField, 0.0);
         double ry = parseDouble(rotYField, 0.0);
         double rz = parseDouble(rotZField, 0.0);
-        
+
         double sx = parseDouble(scaleXField, 1.0);
         double sy = parseDouble(scaleYField, 1.0);
         double sz = parseDouble(scaleZField, 1.0);
-        
+
         if (sx == 0 || sy == 0 || sz == 0) {
             showErrorAlert("Ошибка масштабирования", "Коэффициент масштабирования не может быть нулевым.", "");
             return;
         }
-        
+
         for (Model model : activeModels) {
             if (!hiddenModels.contains(model)) {
                 model.applyAllTransformations(
@@ -974,15 +1143,15 @@ public class GuiController {
         transXField.setText("0.0");
         transYField.setText("0.0");
         transZField.setText("0.0");
-        
+
         rotXField.setText("0.0");
         rotYField.setText("0.0");
         rotZField.setText("0.0");
-        
+
         scaleXField.setText("1.0");
         scaleYField.setText("1.0");
         scaleZField.setText("1.0");
-        
+
         for (Model model : activeModels) {
             if (!hiddenModels.contains(model)) {
                 model.resetTransformations();

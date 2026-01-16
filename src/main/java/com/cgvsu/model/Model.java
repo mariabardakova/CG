@@ -3,8 +3,12 @@ package com.cgvsu.model;
 import com.cgvsu.math.Transformation;
 import com.cgvsu.math.Vector2f;
 import com.cgvsu.math.Vector3f;
+import com.cgvsu.triangulation.Triangulation;
+import com.cgvsu.normalization.Normalization;
+import javafx.scene.paint.Color;
 
 import java.util.*;
+
 
 public class Model {
     private ArrayList<Vector3f> vertices = new ArrayList<Vector3f>();
@@ -12,22 +16,24 @@ public class Model {
     private ArrayList<Vector3f> normals = new ArrayList<Vector3f>();
     private ArrayList<Polygon> polygons = new ArrayList<Polygon>();
 
-    // Трансформация модели
+    private Color color = Color.LIGHTBLUE;
+
+    // Трансформация модели (опционально)
     private Transformation transformation;
     private String name;
-    
+
     // Хранение оригинальных вершин для сброса
     private ArrayList<Vector3f> originalVertices;
-    
+
     // Текущие значения трансформаций
     private float translationX = 0.0f;
     private float translationY = 0.0f;
     private float translationZ = 0.0f;
-    
+
     private float rotationX = 0.0f;
     private float rotationY = 0.0f;
     private float rotationZ = 0.0f;
-    
+
     private float scaleX = 1.0f;
     private float scaleY = 1.0f;
     private float scaleZ = 1.0f;
@@ -60,12 +66,12 @@ public class Model {
 
         // Сбрасываем трансформацию и применяем заново
         transformation.reset();
-        
+
         // Порядок важен: Scale -> Rotate -> Translate
         transformation.applyScaling(scaleX, scaleY, scaleZ);
         transformation.applyRotation(rotationX, rotationY, rotationZ);
         transformation.applyTranslation(translationX, translationY, translationZ);
-        
+
         // Обновляем вершины
         updateVerticesFromOriginal();
     }
@@ -89,8 +95,8 @@ public class Model {
         updateVerticesAfterTransformation();
     }
 
-    public void applyAllTransformations(float tx, float ty, float tz, 
-                                        float rx, float ry, float rz, 
+    public void applyAllTransformations(float tx, float ty, float tz,
+                                        float rx, float ry, float rz,
                                         float sx, float sy, float sz) {
         Transformation t = this.getTransformation();
         t.reset();
@@ -103,17 +109,17 @@ public class Model {
     // Вспомогательный метод для обновления вершин
     private void updateVerticesAfterTransformation() {
         if (transformation == null) return;
-        
+
         // Создаем копию исходных вершин
         ArrayList<Vector3f> originalVertices = getVertices();
         ArrayList<Vector3f> transformedVertices = new ArrayList<>();
-        
+
         for (Vector3f vertex : originalVertices) {
             // Применяем трансформацию
             Vector3f transformed = transformation.transform(vertex);
             transformedVertices.add(transformed);
         }
-        
+
         // Заменяем вершины
         setVertices(transformedVertices);
     }
@@ -123,7 +129,7 @@ public class Model {
         if (originalVertices.isEmpty() || transformation == null) {
             return;
         }
-        
+
         vertices.clear();
         for (Vector3f originalVertex : originalVertices) {
             Vector3f transformed = transformation.transform(originalVertex);
@@ -153,8 +159,8 @@ public class Model {
         applyTransformation();
     }
 
-    public void setAllTransformations(float tx, float ty, float tz, 
-                                     float rx, float ry, float rz, 
+    public void setAllTransformations(float tx, float ty, float tz,
+                                     float rx, float ry, float rz,
                                      float sx, float sy, float sz) {
         this.translationX = tx;
         this.translationY = ty;
@@ -179,7 +185,7 @@ public class Model {
         this.scaleX = 1.0f;
         this.scaleY = 1.0f;
         this.scaleZ = 1.0f;
-        
+
         // Восстанавливаем оригинальные вершины
         if (!originalVertices.isEmpty()) {
             vertices.clear();
@@ -187,7 +193,7 @@ public class Model {
                 vertices.add(new Vector3f(original.getX(), original.getY(), original.getZ()));
             }
         }
-        
+
         transformation.reset();
     }
 
@@ -195,14 +201,24 @@ public class Model {
     public float getTranslationX() { return translationX; }
     public float getTranslationY() { return translationY; }
     public float getTranslationZ() { return translationZ; }
-    
+
     public float getRotationX() { return rotationX; }
     public float getRotationY() { return rotationY; }
     public float getRotationZ() { return rotationZ; }
-    
+
     public float getScaleX() { return scaleX; }
     public float getScaleY() { return scaleY; }
     public float getScaleZ() { return scaleZ; }
+
+
+    public void normalizationPolygons() {
+        normals = Normalization.getVertexNormals(vertices, polygons);
+    }
+
+    public void triangulatePolygons() {
+        polygons = Triangulation.triangulate(polygons);
+    }
+
 
     // Геттеры и сеттеры
     public ArrayList<Vector3f> getVertices() {
@@ -247,6 +263,14 @@ public class Model {
 
     public void setTransformation(Transformation transformation) {
         this.transformation = transformation;
+    }
+
+    public Color getColor() {
+        return color;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
     }
 
     public String getName() {
