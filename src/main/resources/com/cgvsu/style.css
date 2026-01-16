@@ -46,3 +46,33 @@
     -fx-border-color: #ccc;
     -fx-border-width: 1;
 }
+.root.dark-theme {
+    -fx-base: #1e1e1e;
+    -fx-background: #121212;
+    -fx-control-inner-background: #252525;
+    -fx-text-fill: white;
+}
+.dark-theme .tool-panel {
+    -fx-background-color: #121212;
+}
+
+.dark-theme .button {
+    -fx-text-fill: white;
+}
+
+.dark-theme .label {
+    -fx-text-fill: white;
+}
+.dark-theme .tool-panel {
+    -fx-background-color: #2d2d2d;
+}
+
+.dark-theme .model-active {
+    -fx-background-color: #4a6fa5;
+    -fx-text-fill: white;
+}
+
+.dark-theme .model-inactive {
+    -fx-background-color: #3c3c3c;
+    -fx-text-fill: white;
+}

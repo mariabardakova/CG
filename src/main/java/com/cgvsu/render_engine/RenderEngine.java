@@ -20,7 +20,8 @@ public class RenderEngine {
             final int height,
             final boolean showVertices,
             final Integer highlightedPolygonIndex,
-            final Integer highlightedVertexIndex)
+            final Integer highlightedVertexIndex,
+            final Color defaultStrokeColor)
     {
         Matrix4f modelMatrix = rotateScaleTranslate();
         Matrix4f viewMatrix = camera.getViewMatrix();
@@ -38,7 +39,7 @@ public class RenderEngine {
                 graphicsContext.setStroke(Color.RED);
                 graphicsContext.setLineWidth(2.0);
             } else {
-                graphicsContext.setStroke(Color.BLACK);
+                graphicsContext.setStroke(defaultStrokeColor);
                 graphicsContext.setLineWidth(1.0);
             }
 

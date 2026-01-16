@@ -16,7 +16,7 @@
 <?import javafx.scene.control.ComboBox?>
 
 <AnchorPane fx:id="anchorPane" stylesheets="@../style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.cgvsu.GuiController">
-    <Canvas fx:id="canvas" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+    <Canvas fx:id="canvas" styleClass="canvas" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
             AnchorPane.leftAnchor="250" AnchorPane.rightAnchor="0" />
 
     <ScrollPane AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" fitToWidth="true">
@@ -41,6 +41,8 @@
 
                 <Button fx:id="editVerticesButton" text="Удалить вершину/полигон"
                         onAction="#toggleEditVerticesMode" styleClass="model-button"/>
+                <Button fx:id="toggleThemeButton" text="Тёмная тема"
+                        onAction="#toggleDarkTheme" styleClass="model-button"/>
             </HBox>
             <Label text="" styleClass="divider" />
 

@@ -6,6 +6,7 @@ import com.cgvsu.removers.PolygonRemover;
 import com.cgvsu.removers.vertexremover.VertexRemover;
 import com.cgvsu.removers.vertexremover.VertexRemoverImpl;
 import com.cgvsu.render_engine.RenderEngine;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -13,6 +14,7 @@ import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
@@ -87,6 +89,8 @@ public class GuiController {
 
     private Timeline timeline;
 
+    @FXML private Button toggleThemeButton;
+
     /**
      * Контейнер для камер (заглушка, нет логики)
      */
@@ -127,6 +131,21 @@ public class GuiController {
         } catch (NumberFormatException e) {
             showErrorAlert("Некорректное значение", "Поле '" + field.getId() + "' содержит недопустимое число.", e.getMessage());
             return defaultValue;
+        }
+    }
+
+    @FXML
+    private void toggleDarkTheme() {
+        Scene scene = canvas.getScene();
+        if (scene == null || scene.getRoot() == null) return;
+
+        ObservableList<String> styles = scene.getRoot().getStyleClass();
+        if (styles.contains("dark-theme")) {
+            styles.remove("dark-theme");
+            toggleThemeButton.setText("Тёмная тема");
+        } else {
+            styles.add("dark-theme");
+            toggleThemeButton.setText("Светлая тема");
         }
     }
 
@@ -249,7 +268,8 @@ public class GuiController {
 
             canvas.getGraphicsContext2D().clearRect(0, 0, width, height);
             GraphicsContext gc = canvas.getGraphicsContext2D();
-            gc.setFill(Color.rgb(220, 220, 220));
+            Color bgColor = canvas.getScene().getRoot().getStyleClass().contains("dark-theme") ? Color.BLACK : Color.rgb(220, 220, 220);
+            gc.setFill(bgColor);
             gc.fillRect(0, 0, width, height);
 
             camera.setAspectRatio((float) (width / height));
@@ -259,8 +279,8 @@ public class GuiController {
 
                 Integer hvi = (activeModels.contains(model) && model == hoveredModel) ? hoveredVertexIndex : null;
                 Integer hpi = (activeModels.contains(model) && model == hoveredModel) ? hoveredPolygonIndex : null;
-                RenderEngine.render(canvas.getGraphicsContext2D(), camera, model, (int) width, (int) height, editVerticesMode, hpi, hvi);
-            }
+                Color strokeColor = canvas.getScene().getRoot().getStyleClass().contains("dark-theme") ? Color.WHITE : Color.BLACK;
+                RenderEngine.render(canvas.getGraphicsContext2D(), camera, model, (int) width, (int) height, editVerticesMode, hpi, hvi, strokeColor);            }
         });
 
         canvas.setOnMouseMoved(event -> {
