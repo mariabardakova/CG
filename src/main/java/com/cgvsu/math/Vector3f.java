@@ -15,6 +15,9 @@ public class Vector3f {
         this.y = y;
         this.z = z;
     }
+    public Vector3f() {
+        this(0f, 0f, 0f);
+    }
 
     public Vector3f transform(Matrix4f matrix) {
         return matrix.mul(this);

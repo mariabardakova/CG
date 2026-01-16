@@ -187,18 +187,14 @@ public class Matrix4f {
     
     // Создание матрицы перспективной проекции
     public static Matrix4f perspective(float fovDegrees, float aspectRatio, float near, float far) {
-        float fovRad = (float) Math.toRadians(fovDegrees);
-        float f = (float) (1.0 / Math.tan(fovRad / 2.0));
-        
-        Matrix4f mat = new Matrix4f();
-        mat.set(0, 0, f / aspectRatio);
-        mat.set(1, 1, f);
-        mat.set(2, 2, (far + near) / (near - far));
-        mat.set(2, 3, (2 * far * near) / (near - far));
-        mat.set(3, 2, -1.0f);
-        mat.set(3, 3, 0.0f);
-        
-        return mat;
+        Matrix4f result = new Matrix4f();
+        float tangentMinusOnDegree = (float) (1.0F / (Math.tan(fovDegrees * 0.5F)));
+        result.set(0, 0, tangentMinusOnDegree / aspectRatio);
+        result.set(1, 1, tangentMinusOnDegree);
+        result.set(2, 2, (far + near) / (far - near));
+        result.set(2, 3, 1.0F);
+        result.set(3, 2, 2 * (near * far) / (near - far));
+        return result;
     }
     
     // Создание матрицы ортографической проекции
@@ -213,12 +209,11 @@ public class Matrix4f {
         
         return mat;
     }
-    
-    // Создание матрицы вида (lookAt)
+
     public static Matrix4f lookAt(Vector3f eye, Vector3f target, Vector3f up) {
         Vector3f f = target.subtract(eye).normalize();
-        Vector3f s = f.cross(up).normalize();
-        Vector3f u = s.cross(f);
+        Vector3f s = up.cross(f).normalize();  // Изменено: up × f
+        Vector3f u = f.cross(s);               // Изменено: f × s
         
         Matrix4f mat = new Matrix4f();
         mat.set(0, 0, s.getX());
@@ -227,16 +222,14 @@ public class Matrix4f {
         mat.set(1, 0, u.getX());
         mat.set(1, 1, u.getY());
         mat.set(1, 2, u.getZ());
-        mat.set(2, 0, -f.getX());
-        mat.set(2, 1, -f.getY());
-        mat.set(2, 2, -f.getZ());
-        mat.set(3, 0, 0);
-        mat.set(3, 1, 0);
-        mat.set(3, 2, 0);
-        mat.set(3, 3, 1);
+        mat.set(2, 0, f.getX());  // Без минуса для lookAt
+        mat.set(2, 1, f.getY());
+        mat.set(2, 2, f.getZ());
+        mat.set(3, 0, -s.dot(eye));
+        mat.set(3, 1, -u.dot(eye));
+        mat.set(3, 2, -f.dot(eye));
         
-        Matrix4f translation = translation(-eye.getX(), -eye.getY(), -eye.getZ());
-        return mat.mul(translation);
+        return mat;
     }
     
     // Геттеры и сеттеры

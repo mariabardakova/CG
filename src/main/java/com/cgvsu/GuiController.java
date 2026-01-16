@@ -28,10 +28,10 @@ import javafx.util.Duration;
 import java.nio.file.Files;
 import java.io.File;
 import java.util.*;
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Point2f;
-import javax.vecmath.Vector3f;
 
+import com.cgvsu.math.Vector3f;
+import com.cgvsu.math.Matrix4f;
+import com.cgvsu.math.Point2f;
 import com.cgvsu.model.Model;
 import com.cgvsu.render_engine.Camera;
 
@@ -806,7 +806,7 @@ public class GuiController {
 
         for (int i = 0; i < model.getVertices().size(); i++) {
             com.cgvsu.math.Vector3f v3d = model.getVertices().get(i);
-            javax.vecmath.Vector3f v = new javax.vecmath.Vector3f(v3d.getX(), v3d.getY(), v3d.getZ());
+            Vector3f v = new Vector3f(v3d.getX(), v3d.getY(), v3d.getZ());
             Point2f p = vertexToPoint(multiplyMatrix4ByVector3(mvp, v), width, height);
 
             if (Float.isFinite(p.x) && Float.isFinite(p.y)) {
