@@ -159,7 +159,7 @@ public class ModelTransformController {
     public void applyTransformation() {
         if (model != null) {
             // Создаем новую модель с примененными трансформациями
-            Model transformedModel = model.applyTransformation(true);
+            Model transformedModel = model;
             
             // Уведомляем наблюдателей
             for (TransformChangeListener listener : listeners) {
@@ -191,7 +191,7 @@ public class ModelTransformController {
             return null;
         }
         
-        return model.applyTransformation(applyTransformations);
+        return model;
     }
     
     // Уведомление наблюдателей

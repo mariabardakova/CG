@@ -112,8 +112,6 @@
                         <Label text="Режим:" styleClass="section-title"/>
                         <ComboBox fx:id="cameraModeCombo" styleClass="combo-box"/>
                     </HBox>
-                    <CheckBox fx:id="invertYAxisCheckBox" text="Инвертировать ось Y" />
-                    <Button text="Сбросить" onAction="#resetCamera" styleClass="action-button"/>
                 </VBox>
             </TitledPane>
 

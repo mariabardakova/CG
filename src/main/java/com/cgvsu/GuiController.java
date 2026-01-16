@@ -129,68 +129,6 @@ public class GuiController {
         }
     }
 
-    // /**
-    //  * Заглушка для чтения значений координат. Нужно удалить
-    //  */
-    // @FXML
-    // private void applyTranslation() {
-    //     double x = parseDouble(transXField, 0.0);
-    //     double y = parseDouble(transYField, 0.0);
-    //     double z = parseDouble(transZField, 0.0);
-    //     //возможно, это уже есть в кодах Кирилла.
-    // }
-
-    // /**
-    //  * Читает углы. Заглушка, тоже удалить
-    //  */
-    // @FXML
-    // private void applyRotation() {
-    //     double x = Math.toDegrees(parseDouble(rotXField, 0.0));
-    //     double y = Math.toDegrees(parseDouble(rotYField, 0.0));
-    //     double z = Math.toDegrees(parseDouble(rotZField, 0.0));
-    // }
-
-    // /**
-    //  * Заглушка для чтения масштаба. Удалить
-    //  */
-    // @FXML
-    // private void applyScaling() {
-    //     double x = parseDouble(scaleXField, 1.0);
-    //     double y = parseDouble(scaleYField, 1.0);
-    //     double z = parseDouble(scaleZField, 1.0);
-    //     if (x == 0 || y == 0 || z == 0) {
-    //         showErrorAlert("Ошибка масштабирования", "Коэффициент масштабирования не может быть нулевым.", "");
-    //         return;
-    //     }
-    // }
-
-    // /**
-    //  * Вызывает всё вышеперечисленное. Удалить
-    //  */
-    // @FXML
-    // private void applyAllTransformations() {
-    //     applyTranslation();
-    //     applyRotation();
-    //     applyScaling();
-    // }
-
-    // /**
-    //  * Сбрасывает поля для ввода. Удалить
-    //  */
-    // @FXML
-    // private void resetTransformations() {
-    //     transXField.setText("0.0");
-    //     transYField.setText("0.0");
-    //     transZField.setText("0.0");
-
-    //     rotXField.setText("0.0");
-    //     rotYField.setText("0.0");
-    //     rotZField.setText("0.0");
-
-    //     scaleXField.setText("1.0");
-    //     scaleYField.setText("1.0");
-    //     scaleZField.setText("1.0");
-    // }
 
     private Color currentColor = Color.WHITE;
 
@@ -291,15 +229,6 @@ public class GuiController {
     }
 
     /**
-     * Сбрасывает камеру
-     * @param event
-     */
-    @FXML
-    private void resetCamera(ActionEvent event) {
-        camera.setPosition(new Vector3f(0, 0, 100));
-        camera.setTarget(new Vector3f(0, 0, 0));}
-
-    /**
      * Запускает анимацию рендеринга, настраивает камеру и обработчики.
      */
     @FXML
@@ -310,7 +239,7 @@ public class GuiController {
         timeline = new Timeline();
         timeline.setCycleCount(Animation.INDEFINITE);
 
-        cameraModeCombo.getItems().addAll("Свободное перемещение", "Вращение вокруг цели", "От первого лица");
+        cameraModeCombo.getItems().addAll("Свободное перемещение", "Вращение вокруг цели");
         cameraModeCombo.setValue("Свободное перемещение");
 
         KeyFrame frame = new KeyFrame(Duration.millis(15), event -> {
@@ -609,17 +538,21 @@ public class GuiController {
             Button polygonBnt = new Button("Полигональная сетка");
             polygonBnt.getStyleClass().add("extra-button");
 
+            extraButtonsRow.getChildren().addAll(addTextureBtn, removeTextureBtn, polygonBnt);
+            modelsListContainer.getChildren().add(extraButtonsRow);
+
+            HBox transformRow = new HBox(5);
+            transformRow.setAlignment(Pos.CENTER_LEFT);
+            transformRow.setStyle("-fx-padding: 0 0 10 20;");
 
             Button transformBtn = new Button("Трансформация");
             transformBtn.getStyleClass().add("extra-button");
             transformBtn.setOnAction(e -> {
-                // Показать диалог трансформаций для конкретной модели
                 showTransformationDialog(model);
             });
 
-            // Добавьте кнопку в extraButtonsRow
-            extraButtonsRow.getChildren().addAll(addTextureBtn, removeTextureBtn, polygonBnt, transformBtn);
-            modelsListContainer.getChildren().add(extraButtonsRow);
+            transformRow.getChildren().add(transformBtn);
+            modelsListContainer.getChildren().add(transformRow);
         }
     }
 
