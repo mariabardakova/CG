@@ -1,15 +1,13 @@
 package com.cgvsu.render_engine;
-import javax.vecmath.*;
+
+import com.cgvsu.math.Matrix4f;
+import com.cgvsu.math.Point2f;
+import com.cgvsu.math.Vector3f;
 
 public class GraphicConveyor {
 
     public static Matrix4f rotateScaleTranslate() {
-        float[] matrix = new float[]{
-                1, 0, 0, 0,
-                0, 1, 0, 0,
-                0, 0, 1, 0,
-                0, 0, 0, 1};
-        return new Matrix4f(matrix);
+        return Matrix4f.identity();
     }
 
     public static Matrix4f lookAt(Vector3f eye, Vector3f target) {
@@ -17,24 +15,7 @@ public class GraphicConveyor {
     }
 
     public static Matrix4f lookAt(Vector3f eye, Vector3f target, Vector3f up) {
-        Vector3f resultX = new Vector3f();
-        Vector3f resultY = new Vector3f();
-        Vector3f resultZ = new Vector3f();
-
-        resultZ.sub(target, eye);
-        resultX.cross(up, resultZ);
-        resultY.cross(resultZ, resultX);
-
-        resultX.normalize();
-        resultY.normalize();
-        resultZ.normalize();
-
-        float[] matrix = new float[]{
-                resultX.x, resultY.x, resultZ.x, 0,
-                resultX.y, resultY.y, resultZ.y, 0,
-                resultX.z, resultY.z, resultZ.z, 0,
-                -resultX.dot(eye), -resultY.dot(eye), -resultZ.dot(eye), 1};
-        return new Matrix4f(matrix);
+        return Matrix4f.lookAt(eye, target, up);
     }
 
     public static Matrix4f perspective(
@@ -42,21 +23,14 @@ public class GraphicConveyor {
             final float aspectRatio,
             final float nearPlane,
             final float farPlane) {
-        Matrix4f result = new Matrix4f();
-        float tangentMinusOnDegree = (float) (1.0F / (Math.tan(fov * 0.5F)));
-        result.m00 = tangentMinusOnDegree / aspectRatio;
-        result.m11 = tangentMinusOnDegree;
-        result.m22 = (farPlane + nearPlane) / (farPlane - nearPlane);
-        result.m23 = 1.0F;
-        result.m32 = 2 * (nearPlane * farPlane) / (nearPlane - farPlane);
-        return result;
+        return Matrix4f.perspective(fov, aspectRatio, nearPlane, farPlane);
     }
 
     public static Vector3f multiplyMatrix4ByVector3(final Matrix4f matrix, final Vector3f vertex) {
-        final float x = (vertex.x * matrix.m00) + (vertex.y * matrix.m10) + (vertex.z * matrix.m20) + matrix.m30;
-        final float y = (vertex.x * matrix.m01) + (vertex.y * matrix.m11) + (vertex.z * matrix.m21) + matrix.m31;
-        final float z = (vertex.x * matrix.m02) + (vertex.y * matrix.m12) + (vertex.z * matrix.m22) + matrix.m32;
-        final float w = (vertex.x * matrix.m03) + (vertex.y * matrix.m13) + (vertex.z * matrix.m23) + matrix.m33;
+        final float x = (vertex.x * matrix.get(0, 0)) + (vertex.y * matrix.get(1, 0)) + (vertex.z * matrix.get(2, 0)) + matrix.get(3, 0);
+        final float y = (vertex.x * matrix.get(0, 1)) + (vertex.y * matrix.get(1, 1)) + (vertex.z * matrix.get(2, 1)) + matrix.get(3, 1);
+        final float z = (vertex.x * matrix.get(0, 2)) + (vertex.y * matrix.get(1, 2)) + (vertex.z * matrix.get(2, 2)) + matrix.get(3, 2);
+        final float w = (vertex.x * matrix.get(0, 3)) + (vertex.y * matrix.get(1, 3)) + (vertex.z * matrix.get(2, 3)) + matrix.get(3, 3);
         return new Vector3f(x / w, y / w, z / w);
     }
 

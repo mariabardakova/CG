@@ -31,13 +31,9 @@ import java.nio.file.Files;
 import java.io.File;
 import java.util.*;
 
-import com.cgvsu.model.Model;
-import com.cgvsu.render_engine.Camera;
-
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Point2f;
-import javax.vecmath.Vector3f;
-
+import com.cgvsu.math.Vector3f;
+import com.cgvsu.math.Matrix4f;
+import com.cgvsu.math.Point2f;
 import com.cgvsu.model.Model;
 import com.cgvsu.render_engine.Camera;
 import com.cgvsu.triangulation.Triangulation;
@@ -654,38 +650,38 @@ public class GuiController {
     private void showTransformationDialog(Model model) {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Трансформации модели: " + model.getName());
-
+        
         // Получаем текущие значения трансформаций модели
         float currentTx = model.getTranslationX();
         float currentTy = model.getTranslationY();
         float currentTz = model.getTranslationZ();
-
+        
         float currentRx = model.getRotationX();
         float currentRy = model.getRotationY();
         float currentRz = model.getRotationZ();
-
+        
         float currentSx = model.getScaleX();
         float currentSy = model.getScaleY();
         float currentSz = model.getScaleZ();
-
+        
         // Создаем поля ввода с текущими значениями, используя Locale.US для точки
         TextField transX = new TextField(String.format(Locale.US, "%.2f", currentTx));
         TextField transY = new TextField(String.format(Locale.US, "%.2f", currentTy));
         TextField transZ = new TextField(String.format(Locale.US, "%.2f", currentTz));
-
+        
         TextField rotX = new TextField(String.format(Locale.US, "%.2f", currentRx));
         TextField rotY = new TextField(String.format(Locale.US, "%.2f", currentRy));
         TextField rotZ = new TextField(String.format(Locale.US, "%.2f", currentRz));
-
+        
         TextField scaleX = new TextField(String.format(Locale.US, "%.2f", currentSx));
         TextField scaleY = new TextField(String.format(Locale.US, "%.2f", currentSy));
         TextField scaleZ = new TextField(String.format(Locale.US, "%.2f", currentSz));
-
+        
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
         grid.setPadding(new Insets(10, 10, 10, 10));
-
+        
         // Добавляем элементы в GridPane
         grid.add(new Label("Перемещение:"), 0, 0);
         grid.add(new Label("X:"), 0, 1);
@@ -694,7 +690,7 @@ public class GuiController {
         grid.add(transY, 1, 2);
         grid.add(new Label("Z:"), 0, 3);
         grid.add(transZ, 1, 3);
-
+        
         grid.add(new Label("Вращение (градусы):"), 0, 4);
         grid.add(new Label("X:"), 0, 5);
         grid.add(rotX, 1, 5);
@@ -702,7 +698,7 @@ public class GuiController {
         grid.add(rotY, 1, 6);
         grid.add(new Label("Z:"), 0, 7);
         grid.add(rotZ, 1, 7);
-
+        
         grid.add(new Label("Масштабирование:"), 0, 8);
         grid.add(new Label("X:"), 0, 9);
         grid.add(scaleX, 1, 9);
@@ -710,14 +706,14 @@ public class GuiController {
         grid.add(scaleY, 1, 10);
         grid.add(new Label("Z:"), 0, 11);
         grid.add(scaleZ, 1, 11);
-
+        
         dialog.getDialogPane().setContent(grid);
-
+        
         // Кнопки
         ButtonType applyButton = new ButtonType("Применить", ButtonBar.ButtonData.OK_DONE);
         ButtonType resetButton = new ButtonType("Сбросить", ButtonBar.ButtonData.OTHER);
         dialog.getDialogPane().getButtonTypes().addAll(applyButton, resetButton, ButtonType.CANCEL);
-
+        
         // Обработка кнопки "Сбросить"
         Button resetButtonNode = (Button) dialog.getDialogPane().lookupButton(resetButton);
         resetButtonNode.setOnAction(e -> {
@@ -733,36 +729,36 @@ public class GuiController {
             scaleY.setText(String.format(Locale.US, "%.1f", 1.0f));
             scaleZ.setText(String.format(Locale.US, "%.1f", 1.0f));
         });
-
+        
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == applyButton) {
                 try {
                     float tx = Float.parseFloat(transX.getText());
                     float ty = Float.parseFloat(transY.getText());
                     float tz = Float.parseFloat(transZ.getText());
-
+                    
                     float rx = Float.parseFloat(rotX.getText());
                     float ry = Float.parseFloat(rotY.getText());
                     float rz = Float.parseFloat(rotZ.getText());
-
+                    
                     float sx = Float.parseFloat(scaleX.getText());
                     float sy = Float.parseFloat(scaleY.getText());
                     float sz = Float.parseFloat(scaleZ.getText());
                     if (sx == 0 || sy == 0 || sz == 0) {
-                        showErrorAlert("Ошибка масштабирования",
+                        showErrorAlert("Ошибка масштабирования", 
                             "Коэффициент масштабирования не может быть нулевым.", "");
                         return null;
                     }
-
+                    
                     model.setAllTransformations(tx, ty, tz, rx, ry, rz, sx, sy, sz);
                 } catch (NumberFormatException ex) {
-                    showErrorAlert("Ошибка ввода", "Некорректные числовые значения",
+                    showErrorAlert("Ошибка ввода", "Некорректные числовые значения", 
                         "Используйте формат: 0.00 или 0,00");
                 }
             }
             return null;
         });
-
+        
         dialog.showAndWait();
     }
 
@@ -908,7 +904,7 @@ public class GuiController {
 
         for (int i = 0; i < model.getVertices().size(); i++) {
             com.cgvsu.math.Vector3f v3d = model.getVertices().get(i);
-            javax.vecmath.Vector3f v = new javax.vecmath.Vector3f(v3d.getX(), v3d.getY(), v3d.getZ());
+            Vector3f v = new Vector3f(v3d.getX(), v3d.getY(), v3d.getZ());
             Point2f p = vertexToPoint(multiplyMatrix4ByVector3(mvp, v), width, height);
 
             if (Float.isFinite(p.x) && Float.isFinite(p.y)) {
@@ -975,7 +971,7 @@ public class GuiController {
                 com.cgvsu.math.Vector3f vertex = model.getVertices().get(indices.get(i));
                 javax.vecmath.Vector3f v = new javax.vecmath.Vector3f(
                         vertex.x, vertex.y, vertex.z);
-                Point2f screen = vertexToPoint(multiplyMatrix4ByVector3(mvp, v), width, height);
+                Point2f screen = vertexToPoint(multiplyMatrix4ByVector3(mvp, vertex), width, height);
                 xPoints[i] = Math.round(screen.x);
                 yPoints[i] = Math.round(screen.y);
             }
@@ -1019,7 +1015,7 @@ public class GuiController {
                 com.cgvsu.math.Vector3f vertex = model.getVertices().get(indices.get(i));
                 javax.vecmath.Vector3f v = new javax.vecmath.Vector3f(
                         vertex.x, vertex.y, vertex.z);
-                Point2f screen = vertexToPoint(multiplyMatrix4ByVector3(mvp, v), width, height);
+                Point2f screen = vertexToPoint(multiplyMatrix4ByVector3(mvp, vertex), width, height);
                 xPoints[i] = Math.round(screen.x);
                 yPoints[i] = Math.round(screen.y);
             }
@@ -1057,7 +1053,7 @@ public class GuiController {
         double x = parseDouble(transXField, 0.0);
         double y = parseDouble(transYField, 0.0);
         double z = parseDouble(transZField, 0.0);
-
+        
         for (Model model : activeModels) {
             if (!hiddenModels.contains(model)) {
                 model.applyTranslation((float)x, (float)y, (float)z);
@@ -1073,7 +1069,7 @@ public class GuiController {
         double x = parseDouble(rotXField, 0.0);
         double y = parseDouble(rotYField, 0.0);
         double z = parseDouble(rotZField, 0.0);
-
+        
         for (Model model : activeModels) {
             if (!hiddenModels.contains(model)) {
                 model.applyRotation((float)x, (float)y, (float)z);
@@ -1089,12 +1085,12 @@ public class GuiController {
         double x = parseDouble(scaleXField, 1.0);
         double y = parseDouble(scaleYField, 1.0);
         double z = parseDouble(scaleZField, 1.0);
-
+        
         if (x == 0 || y == 0 || z == 0) {
             showErrorAlert("Ошибка масштабирования", "Коэффициент масштабирования не может быть нулевым.", "");
             return;
         }
-
+        
         for (Model model : activeModels) {
             if (!hiddenModels.contains(model)) {
                 model.applyScaling((float)x, (float)y, (float)z);
@@ -1110,20 +1106,20 @@ public class GuiController {
         double tx = parseDouble(transXField, 0.0);
         double ty = parseDouble(transYField, 0.0);
         double tz = parseDouble(transZField, 0.0);
-
+        
         double rx = parseDouble(rotXField, 0.0);
         double ry = parseDouble(rotYField, 0.0);
         double rz = parseDouble(rotZField, 0.0);
-
+        
         double sx = parseDouble(scaleXField, 1.0);
         double sy = parseDouble(scaleYField, 1.0);
         double sz = parseDouble(scaleZField, 1.0);
-
+        
         if (sx == 0 || sy == 0 || sz == 0) {
             showErrorAlert("Ошибка масштабирования", "Коэффициент масштабирования не может быть нулевым.", "");
             return;
         }
-
+        
         for (Model model : activeModels) {
             if (!hiddenModels.contains(model)) {
                 model.applyAllTransformations(
@@ -1143,15 +1139,15 @@ public class GuiController {
         transXField.setText("0.0");
         transYField.setText("0.0");
         transZField.setText("0.0");
-
+        
         rotXField.setText("0.0");
         rotYField.setText("0.0");
         rotZField.setText("0.0");
-
+        
         scaleXField.setText("1.0");
         scaleYField.setText("1.0");
         scaleZField.setText("1.0");
-
+        
         for (Model model : activeModels) {
             if (!hiddenModels.contains(model)) {
                 model.resetTransformations();
