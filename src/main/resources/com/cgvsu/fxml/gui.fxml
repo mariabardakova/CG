@@ -114,6 +114,7 @@
                     </HBox>
                     <CheckBox fx:id="invertYAxisCheckBox" text="Инвертировать ось Y" />
                     <Button text="Сбросить" onAction="#resetCamera" styleClass="action-button"/>
+                    <Button text="Увеличить" onAction="#increaseCamera" styleClass="action-button"/>
                 </VBox>
             </TitledPane>
 
