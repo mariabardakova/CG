@@ -28,12 +28,13 @@ import javafx.util.Duration;
 import java.nio.file.Files;
 import java.io.File;
 import java.util.*;
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Point2f;
-import javax.vecmath.Vector3f;
 
 import com.cgvsu.model.Model;
 import com.cgvsu.render_engine.Camera;
+
+import javax.vecmath.Matrix4f;
+import javax.vecmath.Point2f;
+import javax.vecmath.Vector3f;
 
 import static com.cgvsu.render_engine.GraphicConveyor.*;
 
