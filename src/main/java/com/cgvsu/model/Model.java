@@ -5,6 +5,7 @@ import com.cgvsu.math.Vector2f;
 import com.cgvsu.math.Vector3f;
 import com.cgvsu.triangulation.Triangulation;
 import com.cgvsu.normalization.Normalization;
+import javafx.scene.paint.Color;
 
 import java.util.*;
 
@@ -14,6 +15,8 @@ public class Model {
     private ArrayList<Vector2f> textureVertices = new ArrayList<Vector2f>();
     private ArrayList<Vector3f> normals = new ArrayList<Vector3f>();
     private ArrayList<Polygon> polygons = new ArrayList<Polygon>();
+
+    private Color color = Color.LIGHTBLUE;
 
     // Трансформация модели (опционально)
     private Transformation transformation;
@@ -147,6 +150,14 @@ public class Model {
 
     public void setTransformation(Transformation transformation) {
         this.transformation = transformation;
+    }
+
+    public Color getColor() {
+        return color;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
     }
 
     public String getName() {
