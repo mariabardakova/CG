@@ -11,12 +11,14 @@ import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -127,68 +129,68 @@ public class GuiController {
         }
     }
 
-    /**
-     * Заглушка для чтения значений координат. Нужно удалить
-     */
-    @FXML
-    private void applyTranslation() {
-        double x = parseDouble(transXField, 0.0);
-        double y = parseDouble(transYField, 0.0);
-        double z = parseDouble(transZField, 0.0);
-        //возможно, это уже есть в кодах Кирилла.
-    }
+    // /**
+    //  * Заглушка для чтения значений координат. Нужно удалить
+    //  */
+    // @FXML
+    // private void applyTranslation() {
+    //     double x = parseDouble(transXField, 0.0);
+    //     double y = parseDouble(transYField, 0.0);
+    //     double z = parseDouble(transZField, 0.0);
+    //     //возможно, это уже есть в кодах Кирилла.
+    // }
 
-    /**
-     * Читает углы. Заглушка, тоже удалить
-     */
-    @FXML
-    private void applyRotation() {
-        double x = Math.toDegrees(parseDouble(rotXField, 0.0));
-        double y = Math.toDegrees(parseDouble(rotYField, 0.0));
-        double z = Math.toDegrees(parseDouble(rotZField, 0.0));
-    }
+    // /**
+    //  * Читает углы. Заглушка, тоже удалить
+    //  */
+    // @FXML
+    // private void applyRotation() {
+    //     double x = Math.toDegrees(parseDouble(rotXField, 0.0));
+    //     double y = Math.toDegrees(parseDouble(rotYField, 0.0));
+    //     double z = Math.toDegrees(parseDouble(rotZField, 0.0));
+    // }
 
-    /**
-     * Заглушка для чтения масштаба. Удалить
-     */
-    @FXML
-    private void applyScaling() {
-        double x = parseDouble(scaleXField, 1.0);
-        double y = parseDouble(scaleYField, 1.0);
-        double z = parseDouble(scaleZField, 1.0);
-        if (x == 0 || y == 0 || z == 0) {
-            showErrorAlert("Ошибка масштабирования", "Коэффициент масштабирования не может быть нулевым.", "");
-            return;
-        }
-    }
+    // /**
+    //  * Заглушка для чтения масштаба. Удалить
+    //  */
+    // @FXML
+    // private void applyScaling() {
+    //     double x = parseDouble(scaleXField, 1.0);
+    //     double y = parseDouble(scaleYField, 1.0);
+    //     double z = parseDouble(scaleZField, 1.0);
+    //     if (x == 0 || y == 0 || z == 0) {
+    //         showErrorAlert("Ошибка масштабирования", "Коэффициент масштабирования не может быть нулевым.", "");
+    //         return;
+    //     }
+    // }
 
-    /**
-     * Вызывает всё вышеперечисленное. Удалить
-     */
-    @FXML
-    private void applyAllTransformations() {
-        applyTranslation();
-        applyRotation();
-        applyScaling();
-    }
+    // /**
+    //  * Вызывает всё вышеперечисленное. Удалить
+    //  */
+    // @FXML
+    // private void applyAllTransformations() {
+    //     applyTranslation();
+    //     applyRotation();
+    //     applyScaling();
+    // }
 
-    /**
-     * Сбрасывает поля для ввода. Удалить
-     */
-    @FXML
-    private void resetTransformations() {
-        transXField.setText("0.0");
-        transYField.setText("0.0");
-        transZField.setText("0.0");
+    // /**
+    //  * Сбрасывает поля для ввода. Удалить
+    //  */
+    // @FXML
+    // private void resetTransformations() {
+    //     transXField.setText("0.0");
+    //     transYField.setText("0.0");
+    //     transZField.setText("0.0");
 
-        rotXField.setText("0.0");
-        rotYField.setText("0.0");
-        rotZField.setText("0.0");
+    //     rotXField.setText("0.0");
+    //     rotYField.setText("0.0");
+    //     rotZField.setText("0.0");
 
-        scaleXField.setText("1.0");
-        scaleYField.setText("1.0");
-        scaleZField.setText("1.0");
-    }
+    //     scaleXField.setText("1.0");
+    //     scaleYField.setText("1.0");
+    //     scaleZField.setText("1.0");
+    // }
 
     private Color currentColor = Color.WHITE;
 
@@ -413,6 +415,10 @@ public class GuiController {
             Model model = ObjReader.read(fileContent);
 
             model.setName("Модель " + modelCounter++);
+
+            // Сохраняем оригинальные вершины модели
+            model.saveOriginalVertices();
+
             models.add(model);
             activeModels.add(model);
 
@@ -603,10 +609,139 @@ public class GuiController {
             Button polygonBnt = new Button("Полигональная сетка");
             polygonBnt.getStyleClass().add("extra-button");
 
-            extraButtonsRow.getChildren().addAll(addTextureBtn, removeTextureBtn, polygonBnt);
+
+            Button transformBtn = new Button("Трансформация");
+            transformBtn.getStyleClass().add("extra-button");
+            transformBtn.setOnAction(e -> {
+                // Показать диалог трансформаций для конкретной модели
+                showTransformationDialog(model);
+            });
+
+            // Добавьте кнопку в extraButtonsRow
+            extraButtonsRow.getChildren().addAll(addTextureBtn, removeTextureBtn, polygonBnt, transformBtn);
             modelsListContainer.getChildren().add(extraButtonsRow);
         }
     }
+
+    /**
+     * Показывает диалог трансформаций для конкретной модели
+     */
+
+    private void showTransformationDialog(Model model) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Трансформации модели: " + model.getName());
+        
+        // Получаем текущие значения трансформаций модели
+        float currentTx = model.getTranslationX();
+        float currentTy = model.getTranslationY();
+        float currentTz = model.getTranslationZ();
+        
+        float currentRx = model.getRotationX();
+        float currentRy = model.getRotationY();
+        float currentRz = model.getRotationZ();
+        
+        float currentSx = model.getScaleX();
+        float currentSy = model.getScaleY();
+        float currentSz = model.getScaleZ();
+        
+        // Создаем поля ввода с текущими значениями, используя Locale.US для точки
+        TextField transX = new TextField(String.format(Locale.US, "%.2f", currentTx));
+        TextField transY = new TextField(String.format(Locale.US, "%.2f", currentTy));
+        TextField transZ = new TextField(String.format(Locale.US, "%.2f", currentTz));
+        
+        TextField rotX = new TextField(String.format(Locale.US, "%.2f", currentRx));
+        TextField rotY = new TextField(String.format(Locale.US, "%.2f", currentRy));
+        TextField rotZ = new TextField(String.format(Locale.US, "%.2f", currentRz));
+        
+        TextField scaleX = new TextField(String.format(Locale.US, "%.2f", currentSx));
+        TextField scaleY = new TextField(String.format(Locale.US, "%.2f", currentSy));
+        TextField scaleZ = new TextField(String.format(Locale.US, "%.2f", currentSz));
+        
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(10, 10, 10, 10));
+        
+        // Добавляем элементы в GridPane
+        grid.add(new Label("Перемещение:"), 0, 0);
+        grid.add(new Label("X:"), 0, 1);
+        grid.add(transX, 1, 1);
+        grid.add(new Label("Y:"), 0, 2);
+        grid.add(transY, 1, 2);
+        grid.add(new Label("Z:"), 0, 3);
+        grid.add(transZ, 1, 3);
+        
+        grid.add(new Label("Вращение (градусы):"), 0, 4);
+        grid.add(new Label("X:"), 0, 5);
+        grid.add(rotX, 1, 5);
+        grid.add(new Label("Y:"), 0, 6);
+        grid.add(rotY, 1, 6);
+        grid.add(new Label("Z:"), 0, 7);
+        grid.add(rotZ, 1, 7);
+        
+        grid.add(new Label("Масштабирование:"), 0, 8);
+        grid.add(new Label("X:"), 0, 9);
+        grid.add(scaleX, 1, 9);
+        grid.add(new Label("Y:"), 0, 10);
+        grid.add(scaleY, 1, 10);
+        grid.add(new Label("Z:"), 0, 11);
+        grid.add(scaleZ, 1, 11);
+        
+        dialog.getDialogPane().setContent(grid);
+        
+        // Кнопки
+        ButtonType applyButton = new ButtonType("Применить", ButtonBar.ButtonData.OK_DONE);
+        ButtonType resetButton = new ButtonType("Сбросить", ButtonBar.ButtonData.OTHER);
+        dialog.getDialogPane().getButtonTypes().addAll(applyButton, resetButton, ButtonType.CANCEL);
+        
+        // Обработка кнопки "Сбросить"
+        Button resetButtonNode = (Button) dialog.getDialogPane().lookupButton(resetButton);
+        resetButtonNode.setOnAction(e -> {
+            model.resetTransformations();
+            // Обновляем поля в диалоге с использованием Locale.US
+            transX.setText(String.format(Locale.US, "%.1f", 0.0f));
+            transY.setText(String.format(Locale.US, "%.1f", 0.0f));
+            transZ.setText(String.format(Locale.US, "%.1f", 0.0f));
+            rotX.setText(String.format(Locale.US, "%.1f", 0.0f));
+            rotY.setText(String.format(Locale.US, "%.1f", 0.0f));
+            rotZ.setText(String.format(Locale.US, "%.1f", 0.0f));
+            scaleX.setText(String.format(Locale.US, "%.1f", 1.0f));
+            scaleY.setText(String.format(Locale.US, "%.1f", 1.0f));
+            scaleZ.setText(String.format(Locale.US, "%.1f", 1.0f));
+        });
+        
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == applyButton) {
+                try {
+                    float tx = Float.parseFloat(transX.getText());
+                    float ty = Float.parseFloat(transY.getText());
+                    float tz = Float.parseFloat(transZ.getText());
+                    
+                    float rx = Float.parseFloat(rotX.getText());
+                    float ry = Float.parseFloat(rotY.getText());
+                    float rz = Float.parseFloat(rotZ.getText());
+                    
+                    float sx = Float.parseFloat(scaleX.getText());
+                    float sy = Float.parseFloat(scaleY.getText());
+                    float sz = Float.parseFloat(scaleZ.getText());
+                    if (sx == 0 || sy == 0 || sz == 0) {
+                        showErrorAlert("Ошибка масштабирования", 
+                            "Коэффициент масштабирования не может быть нулевым.", "");
+                        return null;
+                    }
+                    
+                    model.setAllTransformations(tx, ty, tz, rx, ry, rz, sx, sy, sz);
+                } catch (NumberFormatException ex) {
+                    showErrorAlert("Ошибка ввода", "Некорректные числовые значения", 
+                        "Используйте формат: 0.00 или 0,00");
+                }
+            }
+            return null;
+        });
+        
+        dialog.showAndWait();
+    }
+
 
     /**
      * Меняет стиль кнопки в зависимости от активности модели
@@ -788,6 +923,117 @@ public class GuiController {
         alert.setContentText(content + "\n\nДетали: " + (details != null ? details : "—"));
         alert.getButtonTypes().setAll(ButtonType.OK);
         alert.showAndWait();
+    }
+
+
+    /**
+     * Применяет перемещение к активным моделям
+     */
+    @FXML
+    private void applyTranslation() {
+        double x = parseDouble(transXField, 0.0);
+        double y = parseDouble(transYField, 0.0);
+        double z = parseDouble(transZField, 0.0);
+        
+        for (Model model : activeModels) {
+            if (!hiddenModels.contains(model)) {
+                model.applyTranslation((float)x, (float)y, (float)z);
+            }
+        }
+    }
+
+    /**
+     * Применяет вращение к активным моделям
+     */
+    @FXML
+    private void applyRotation() {
+        double x = parseDouble(rotXField, 0.0);
+        double y = parseDouble(rotYField, 0.0);
+        double z = parseDouble(rotZField, 0.0);
+        
+        for (Model model : activeModels) {
+            if (!hiddenModels.contains(model)) {
+                model.applyRotation((float)x, (float)y, (float)z);
+            }
+        }
+    }
+
+    /**
+     * Применяет масштабирование к активным моделям
+     */
+    @FXML
+    private void applyScaling() {
+        double x = parseDouble(scaleXField, 1.0);
+        double y = parseDouble(scaleYField, 1.0);
+        double z = parseDouble(scaleZField, 1.0);
+        
+        if (x == 0 || y == 0 || z == 0) {
+            showErrorAlert("Ошибка масштабирования", "Коэффициент масштабирования не может быть нулевым.", "");
+            return;
+        }
+        
+        for (Model model : activeModels) {
+            if (!hiddenModels.contains(model)) {
+                model.applyScaling((float)x, (float)y, (float)z);
+            }
+        }
+    }
+
+    /**
+     * Применяет все трансформации к активным моделям
+     */
+    @FXML
+    private void applyAllTransformations() {
+        double tx = parseDouble(transXField, 0.0);
+        double ty = parseDouble(transYField, 0.0);
+        double tz = parseDouble(transZField, 0.0);
+        
+        double rx = parseDouble(rotXField, 0.0);
+        double ry = parseDouble(rotYField, 0.0);
+        double rz = parseDouble(rotZField, 0.0);
+        
+        double sx = parseDouble(scaleXField, 1.0);
+        double sy = parseDouble(scaleYField, 1.0);
+        double sz = parseDouble(scaleZField, 1.0);
+        
+        if (sx == 0 || sy == 0 || sz == 0) {
+            showErrorAlert("Ошибка масштабирования", "Коэффициент масштабирования не может быть нулевым.", "");
+            return;
+        }
+        
+        for (Model model : activeModels) {
+            if (!hiddenModels.contains(model)) {
+                model.applyAllTransformations(
+                    (float)tx, (float)ty, (float)tz,
+                    (float)rx, (float)ry, (float)rz,
+                    (float)sx, (float)sy, (float)sz
+                );
+            }
+        }
+    }
+
+    /**
+     * Сбрасывает трансформации для активных моделей
+     */
+    @FXML
+    private void resetTransformations() {
+        transXField.setText("0.0");
+        transYField.setText("0.0");
+        transZField.setText("0.0");
+        
+        rotXField.setText("0.0");
+        rotYField.setText("0.0");
+        rotZField.setText("0.0");
+        
+        scaleXField.setText("1.0");
+        scaleYField.setText("1.0");
+        scaleZField.setText("1.0");
+        
+        for (Model model : activeModels) {
+            if (!hiddenModels.contains(model)) {
+                model.resetTransformations();
+            }
+        }
     }
 
     @FXML
