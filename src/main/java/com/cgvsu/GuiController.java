@@ -1,10 +1,13 @@
 package com.cgvsu;
+
 import com.cgvsu.model.Polygon;
 import com.cgvsu.objreader.ObjReader;
 import com.cgvsu.objwriter.ObjWriter;
 import com.cgvsu.removers.PolygonRemover;
 import com.cgvsu.removers.vertexremover.VertexRemover;
 import com.cgvsu.removers.vertexremover.VertexRemoverImpl;
+import com.cgvsu.render_engine.Camera;
+import com.cgvsu.render_engine.CameraController;
 import com.cgvsu.render_engine.RenderEngine;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -58,8 +61,9 @@ public class GuiController {
 
     @FXML
     private VBox modelsListContainer;
+
     /**
-     *Модель, над которой находится курсор
+     * Модель, над которой находится курсор
      */
     private Model hoveredModel = null;
     /**
@@ -88,10 +92,14 @@ public class GuiController {
      */
     private int modelCounter = 1;
 
+    // Используем новую камеру из пакета com.cgvsu.render_engine
     private Camera camera = new Camera(
             new Vector3f(0, 0, 100),
             new Vector3f(0, 0, 0),
-            1.0F, 1, 0.01F, 100);
+            60.0F, 1, 0.01F, 1000.0F); // Изменил FOV на 60 градусов для лучшего обзора
+
+    // Контроллер камеры для обработки ввода
+    private CameraController cameraController;
 
     private Timeline timeline;
 
@@ -107,10 +115,9 @@ public class GuiController {
      * Выбор режима камеры
      */
     @FXML private ComboBox<String> cameraModeCombo;
-    /**
-     * Флажок для инверсии по Y (для Кирилла)
-     */
-    @FXML private CheckBox invertYAxisCheckBox;
+
+    // Флажок для инверсии по Y (если понадобится)
+    // @FXML private CheckBox invertYAxisCheckBox;
 
     /**
      * Поля ввода для перемещения модели по осям
@@ -279,21 +286,55 @@ public class GuiController {
     /**
      * Запускает анимацию рендеринга, настраивает камеру и обработчики.
      */
+    // [file name]: GuiController.java (обновленная часть для инициализации)
+    // Замените только метод initialize() и добавьте небольшое изменение в основной цикл:
+
+    /**
+     * Запускает анимацию рендеринга, настраивает камеру и обработчики.
+     */
     @FXML
     private void initialize() {
-        anchorPane.prefWidthProperty().addListener((ov, oldValue, newValue) -> canvas.setWidth(newValue.doubleValue()));
-        anchorPane.prefHeightProperty().addListener((ov, oldValue, newValue) -> canvas.setHeight(newValue.doubleValue()));
+        anchorPane.prefWidthProperty().addListener((ov, oldValue, newValue) -> {
+            canvas.setWidth(newValue.doubleValue());
+        });
+        anchorPane.prefHeightProperty().addListener((ov, oldValue, newValue) -> {
+            canvas.setHeight(newValue.doubleValue());
+        });
+
+        cameraModeCombo.getItems().addAll(
+            "Стандартный взгляд (без движения)",
+            "Свободный полет (WASD + мышь + колесико)",
+            "Вращение вокруг объекта (мышь + колесико)"
+        );
+        cameraModeCombo.setValue("Стандартный взгляд (без движения)");
+
+        // Устанавливаем начальный режим камеры
+        camera.setMode(Camera.CameraMode.FIXED);
+
+        // Обработчик изменения режима камеры
+        cameraModeCombo.setOnAction(event -> {
+            String selectedMode = cameraModeCombo.getValue();
+            switch (selectedMode) {
+                case "Стандартный взгляд (без движения)":
+                    camera.setMode(Camera.CameraMode.FIXED);
+                    break;
+                case "Свободный полет (WASD + мышь + колесико)":
+                    camera.setMode(Camera.CameraMode.FREE_FLIGHT);
+                    break;
+                case "Вращение вокруг объекта (мышь + колесико)":
+                    camera.setMode(Camera.CameraMode.ORBIT);
+                    break;
+            }
+        });
 
         timeline = new Timeline();
         timeline.setCycleCount(Animation.INDEFINITE);
-
-        cameraModeCombo.getItems().addAll("Свободное перемещение", "Вращение вокруг цели");
-        cameraModeCombo.setValue("Свободное перемещение");
 
         KeyFrame frame = new KeyFrame(Duration.millis(15), event -> {
             double width = canvas.getWidth();
             double height = canvas.getHeight();
 
+            // Очищаем канвас
             canvas.getGraphicsContext2D().clearRect(0, 0, width, height);
             GraphicsContext gc = canvas.getGraphicsContext2D();
             Color bgColor = canvas.getScene().getRoot().getStyleClass().contains("dark-theme") ? Color.BLACK : Color.rgb(220, 220, 220);
@@ -303,8 +344,15 @@ public class GuiController {
             Color strokeColor = canvas.getScene().getRoot().getStyleClass().contains("dark-theme")
                     ? Color.WHITE : Color.BLACK;
 
+            // Обновляем соотношение сторон камеры
             camera.setAspectRatio((float) (width / height));
 
+            // Обновляем контроллер камеры (обработка ввода WASD)
+            if (cameraController != null) {
+                cameraController.update();
+            }
+
+            // Рендерим все активные модели
             for (Model model : models) {
                 if (hiddenModels.contains(model)) continue;
 
@@ -330,6 +378,7 @@ public class GuiController {
             }
         });
 
+        // Обработка мыши для режима редактирования вершин
         canvas.setOnMouseMoved(event -> {
             if (!editVerticesMode) {
                 hoveredModel = null;
@@ -373,6 +422,7 @@ public class GuiController {
             }
         });
 
+        // Обработка клавиш для режима редактирования вершин
         canvas.setFocusTraversable(true);
         canvas.setOnKeyPressed(event -> {
             if (!editVerticesMode) return;
@@ -391,6 +441,30 @@ public class GuiController {
 
         timeline.getKeyFrames().add(frame);
         timeline.play();
+
+        // Инициализируем контроллер камеры после загрузки сцены
+        // Ждем, пока сцена будет доступна
+        canvas.sceneProperty().addListener((observable, oldScene, newScene) -> {
+            if (newScene != null && cameraController == null) {
+                cameraController = new CameraController(camera, newScene, canvas);
+                // Устанавливаем фокус на канвас для обработки клавиш
+                canvas.requestFocus();
+            }
+        });
+    }
+
+    /**
+     * Сброс камеры в исходное состояние
+     */
+    @FXML
+    private void resetCamera() {
+        camera.setPosition(new Vector3f(0, 0, 100));
+        camera.setTarget(new Vector3f(0, 0, 0));
+        camera.setFov(60.0f);
+
+        // Сбрасываем ComboBox к стандартному режиму
+        cameraModeCombo.setValue("Стандартный взгляд (без движения)");
+        camera.setMode(Camera.CameraMode.FIXED);
     }
 
     /**
@@ -799,8 +873,8 @@ public class GuiController {
         Matrix4f projectionMatrix = cam.getProjectionMatrix();
 
         Matrix4f mvp = new Matrix4f(modelMatrix);
-        mvp.mul(viewMatrix);
-        mvp.mul(projectionMatrix);
+        mvp = mvp.mul(viewMatrix);
+        mvp = mvp.mul(projectionMatrix);
 
         for (int i = 0; i < model.getPolygons().size(); i++) {
             Polygon polygon = model.getPolygons().get(i);
@@ -897,8 +971,8 @@ public class GuiController {
         Matrix4f projectionMatrix = cam.getProjectionMatrix();
 
         Matrix4f mvp = new Matrix4f(modelMatrix);
-        mvp.mul(viewMatrix);
-        mvp.mul(projectionMatrix);
+        mvp = mvp.mul(viewMatrix);
+        mvp = mvp.mul(projectionMatrix);
 
         float threshold = 5.0f;
 
@@ -1155,6 +1229,7 @@ public class GuiController {
         }
     }
 
+    // Старые методы управления камерой (кнопки в GUI) - оставляем для совместимости
     @FXML
     public void handleCameraForward(ActionEvent actionEvent) {
         camera.movePosition(new Vector3f(0, 0, -TRANSLATION));
@@ -1183,5 +1258,15 @@ public class GuiController {
     @FXML
     public void handleCameraDown(ActionEvent actionEvent) {
         camera.movePosition(new Vector3f(0, -TRANSLATION, 0));
+    }
+
+    // Метод для очистки ресурсов при закрытии
+    public void cleanup() {
+        if (cameraController != null) {
+            cameraController.cleanup();
+        }
+        if (timeline != null) {
+            timeline.stop();
+        }
     }
 }

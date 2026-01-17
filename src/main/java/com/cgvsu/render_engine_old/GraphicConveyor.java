@@ -1,4 +1,4 @@
-package com.cgvsu.render_engine;
+package com.cgvsu.render_engine_old;
 
 import com.cgvsu.math.Matrix4f;
 import com.cgvsu.math.Point2f;
@@ -31,31 +31,10 @@ public class GraphicConveyor {
         final float y = (vertex.x * matrix.get(0, 1)) + (vertex.y * matrix.get(1, 1)) + (vertex.z * matrix.get(2, 1)) + matrix.get(3, 1);
         final float z = (vertex.x * matrix.get(0, 2)) + (vertex.y * matrix.get(1, 2)) + (vertex.z * matrix.get(2, 2)) + matrix.get(3, 2);
         final float w = (vertex.x * matrix.get(0, 3)) + (vertex.y * matrix.get(1, 3)) + (vertex.z * matrix.get(2, 3)) + matrix.get(3, 3);
-        
-        // Проверяем w на 0, чтобы избежать деления на ноль
-        if (Math.abs(w) < 1e-10f) {
-            return new Vector3f(0, 0, 0);
-        }
-        
         return new Vector3f(x / w, y / w, z / w);
     }
 
     public static Point2f vertexToPoint(final Vector3f vertex, final int width, final int height) {
-        // Проверяем на NaN и бесконечность
-        if (!Float.isFinite(vertex.x) || !Float.isFinite(vertex.y)) {
-            return new Point2f(0, 0);
-        }
-        
-        // Проверяем, чтобы координаты были в разумных пределах
-        float x = vertex.x * width + width / 2.0F;
-        float y = -vertex.y * height + height / 2.0F;
-        
-        // Ограничиваем координаты размерами экрана (но не обрезаем, просто для стабильности)
-        if (x < -width * 10) x = -width * 10;
-        if (x > width * 10) x = width * 10;
-        if (y < -height * 10) y = -height * 10;
-        if (y > height * 10) y = height * 10;
-        
-        return new Point2f(x, y);
+        return new Point2f(vertex.x * width + width / 2.0F, -vertex.y * height + height / 2.0F);
     }
 }
