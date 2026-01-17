@@ -421,6 +421,11 @@ public class GuiController {
                 hoveredVertexIndex = null;
             }
         });
+        canvas.setOnMouseEntered(event -> {
+            if (editVerticesMode) {
+                canvas.requestFocus();
+            }
+        });
 
         // Обработка клавиш для режима редактирования вершин
         canvas.setFocusTraversable(true);
