@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Triangulation {
-    public static List<Polygon> triangulate(List<Polygon> polygons) {
-        List<Polygon> result = new ArrayList<>();
+    public static ArrayList<Polygon> triangulate(ArrayList<Polygon> polygons) {
+        ArrayList<Polygon> result = new ArrayList<>();
 
         for (Polygon polygon : polygons) {
             List<Integer> vertices = polygon.getVertexIndices();

@@ -32,12 +32,19 @@ import javax.vecmath.Vector3f;
 
 import com.cgvsu.model.Model;
 import com.cgvsu.render_engine.Camera;
+import com.cgvsu.triangulation.Triangulation;
+import com.cgvsu.triangulation.TriangleRasterization;
 
 import static com.cgvsu.render_engine.GraphicConveyor.*;
 
 public class GuiController {
 
     final private float TRANSLATION = 0.5F;
+
+    private boolean showTriangles = false;
+
+    private Map<Model, Boolean> modelTriangleMode = new HashMap<>();
+    private Map<Model, Color> modelColors = new HashMap<>();
 
     @FXML
     AnchorPane anchorPane;
@@ -214,6 +221,30 @@ public class GuiController {
         }
     }
 
+    private void chooseColorForModel(Model model) {
+        ColorPicker colorPicker = new ColorPicker();
+
+        Color currentModelColor = modelColors.getOrDefault(model, Color.WHITE);
+        colorPicker.setValue(currentModelColor);
+
+        Dialog<Color> dialog = new Dialog<>();
+        dialog.setTitle("Выбор цвета для " + model.getName());
+        dialog.getDialogPane().setContent(colorPicker);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.setResultConverter(buttonType -> {
+            if (buttonType == ButtonType.OK) {
+                return colorPicker.getValue();
+            }
+            return null;
+        });
+
+        Optional<Color> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            modelColors.put(model, result.get());
+        }
+    }
+
     /**
      * Счётчик камер
      */
@@ -297,6 +328,11 @@ public class GuiController {
         camera.setPosition(new Vector3f(0, 0, 100));
         camera.setTarget(new Vector3f(0, 0, 0));}
 
+    @FXML
+    private void increaseCamera(ActionEvent event) {
+        camera.setPosition(new Vector3f(0, 0, 25));
+        camera.setTarget(new Vector3f(0, 0, 0));}
+
     /**
      * Запускает анимацию рендеринга, настраивает камеру и обработчики.
      */
@@ -325,9 +361,25 @@ public class GuiController {
             for (Model model : models) {
                 if (hiddenModels.contains(model)) continue;
 
-                Integer hvi = (activeModels.contains(model) && model == hoveredModel) ? hoveredVertexIndex : null;
-                Integer hpi = (activeModels.contains(model) && model == hoveredModel) ? hoveredPolygonIndex : null;
-                RenderEngine.render(canvas.getGraphicsContext2D(), camera, model, (int) width, (int) height, editVerticesMode, hpi, hvi);
+                if (isTriangleModeEnabled(model)) {
+                    // ПОЛИГОНАЛЬНЫЙ РЕЖИМ - КОНТУРЫ
+                    renderTriangles(gc, model, camera, (int)width, (int)height);
+                } else {
+                    // ОБЫЧНЫЙ РЕЖИМ
+                    if (modelColors.containsKey(model)) {
+                        // Обычный режим С ЦВЕТОМ - ЗАЛИВКА
+                        renderFilledTriangles(gc, model, camera, (int)width, (int)height);
+
+                        // Если нужно, можно добавить контур поверх заливки:
+                        // renderTriangles(gc, model, camera, (int)width, (int)height);
+                    } else {
+                        // Обычный режим БЕЗ ЦВЕТА (старый способ)
+                        RenderEngine.render(gc, camera, model, (int)width, (int)height,
+                                editVerticesMode,
+                                model == hoveredModel ? hoveredPolygonIndex : null,
+                                model == hoveredModel ? hoveredVertexIndex : null);
+                    }
+                }
             }
         });
 
@@ -602,9 +654,28 @@ public class GuiController {
             removeTextureBtn.getStyleClass().add("extra-button");
             Button polygonBnt = new Button("Полигональная сетка");
             polygonBnt.getStyleClass().add("extra-button");
+            Button colorBtn = new Button("Добавить цвет");
+            colorBtn.getStyleClass().add("extra-button");
 
-            extraButtonsRow.getChildren().addAll(addTextureBtn, removeTextureBtn, polygonBnt);
+            extraButtonsRow.getChildren().addAll(addTextureBtn, removeTextureBtn, polygonBnt, colorBtn);
             modelsListContainer.getChildren().add(extraButtonsRow);
+
+            colorBtn.setOnAction(e -> {
+                chooseColorForModel(model);
+            });
+
+            polygonBnt.setOnAction(e -> {
+                // Меняем состояние для текущей модели
+                if (activeModels.contains(model)) {
+                    toggleTriangleMode(model);
+
+                    // Получаем ТЕКУЩЕЕ состояние после переключения
+                    boolean isTriangleMode = isTriangleModeEnabled(model);
+
+                    // Устанавливаем текст в зависимости от текущего состояния
+                    polygonBnt.setText(isTriangleMode ? "Обычный вид" : "Полигональная сетка");
+                }
+            });
         }
     }
 
@@ -634,6 +705,9 @@ public class GuiController {
      * @param height
      * @return
      */
+
+
+
     private Integer findPolygonUnderCursor(Model model, double mouseX, double mouseY, int width, int height) {
         Camera cam = camera;
         Matrix4f modelMatrix = rotateScaleTranslate();
@@ -715,6 +789,14 @@ public class GuiController {
         }
     }
 
+    private void toggleTriangleMode(Model model) {
+        modelTriangleMode.put(model, !modelTriangleMode.getOrDefault(model, false));
+    }
+
+    private boolean isTriangleModeEnabled(Model model) {
+        return modelTriangleMode.getOrDefault(model, false);
+    }
+
     /**
      * Находит вершину под курсором
      * @param model
@@ -772,6 +854,94 @@ public class GuiController {
             hoveredModel = null;
             hoveredVertexIndex = null;
             hoveredPolygonIndex = null;
+        }
+    }
+
+    private void renderTriangles(GraphicsContext gc, Model model, Camera camera,
+                                 int width, int height) {
+        // Триангулируем
+        ArrayList<Polygon> triangles = Triangulation.triangulate(
+                new ArrayList<>(model.getPolygons()));
+
+        // Матрицы преобразования
+        Matrix4f modelMatrix = rotateScaleTranslate();
+        Matrix4f viewMatrix = camera.getViewMatrix();
+        Matrix4f projectionMatrix = camera.getProjectionMatrix();
+        Matrix4f mvp = new Matrix4f(modelMatrix);
+        mvp.mul(viewMatrix);
+        mvp.mul(projectionMatrix);
+
+        // Получаем цвет модели или используем синий по умолчанию
+        Color modelColor = modelColors.getOrDefault(model, Color.BLUE);
+
+        // ПОЛИГОНАЛЬНЫЙ РЕЖИМ - РИСУЕМ КОНТУРЫ (drawTriangle вместо fillTriangle)
+        for (Polygon triangle : triangles) {
+            List<Integer> indices = triangle.getVertexIndices();
+            if (indices.size() != 3) continue;
+
+            int[] xPoints = new int[3];
+            int[] yPoints = new int[3];
+
+            // Получаем экранные координаты
+            for (int i = 0; i < 3; i++) {
+                com.cgvsu.math.Vector3f vertex = model.getVertices().get(indices.get(i));
+                javax.vecmath.Vector3f v = new javax.vecmath.Vector3f(
+                        vertex.x, vertex.y, vertex.z);
+                Point2f screen = vertexToPoint(multiplyMatrix4ByVector3(mvp, v), width, height);
+                xPoints[i] = Math.round(screen.x);
+                yPoints[i] = Math.round(screen.y);
+            }
+
+            // ВАЖНО: В полигональном режиме рисуем КОНТУРЫ (drawTriangle)
+            TriangleRasterization.drawTriangle(gc,
+                    xPoints[0], yPoints[0],
+                    xPoints[1], yPoints[1],
+                    xPoints[2], yPoints[2],
+                    modelColor);
+        }
+    }
+
+    private void renderFilledTriangles(GraphicsContext gc, Model model, Camera camera,
+                                 int width, int height) {
+        // Триангулируем
+        ArrayList<Polygon> triangles = Triangulation.triangulate(
+                new ArrayList<>(model.getPolygons()));
+
+        // Матрицы преобразования
+        Matrix4f modelMatrix = rotateScaleTranslate();
+        Matrix4f viewMatrix = camera.getViewMatrix();
+        Matrix4f projectionMatrix = camera.getProjectionMatrix();
+        Matrix4f mvp = new Matrix4f(modelMatrix);
+        mvp.mul(viewMatrix);
+        mvp.mul(projectionMatrix);
+
+        // Получаем цвет модели или используем синий по умолчанию
+        Color modelColor = modelColors.getOrDefault(model, Color.BLUE);
+
+        // В ПОЛИГОНАЛЬНОМ РЕЖИМЕ РИСУЕМ КОНТУРЫ, а не заливку
+        for (Polygon triangle : triangles) {
+            List<Integer> indices = triangle.getVertexIndices();
+            if (indices.size() != 3) continue;
+
+            int[] xPoints = new int[3];
+            int[] yPoints = new int[3];
+
+            // Получаем экранные координаты
+            for (int i = 0; i < 3; i++) {
+                com.cgvsu.math.Vector3f vertex = model.getVertices().get(indices.get(i));
+                javax.vecmath.Vector3f v = new javax.vecmath.Vector3f(
+                        vertex.x, vertex.y, vertex.z);
+                Point2f screen = vertexToPoint(multiplyMatrix4ByVector3(mvp, v), width, height);
+                xPoints[i] = Math.round(screen.x);
+                yPoints[i] = Math.round(screen.y);
+            }
+
+            // ВАЖНО: В полигональном режиме рисуем КОНТУРЫ треугольников
+            TriangleRasterization.fillTriangle(gc,
+                    xPoints[0], yPoints[0],
+                    xPoints[1], yPoints[1],
+                    xPoints[2], yPoints[2],
+                    modelColor);
         }
     }
 
